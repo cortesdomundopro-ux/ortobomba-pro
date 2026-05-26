@@ -51,6 +51,7 @@ let db: any = null;
 let ME = { nick: "", id: "", salaId: "", host: false, skinIndex: 0 };
 let salaRef: any = null;
 let reactionRef: any = null;
+const sentReactionIds = new Set<string>();
 let adminRef: any = null;
 let bombTimerInterval: ReturnType<typeof setInterval> | null = null;
 let particlesActive = true;
@@ -454,6 +455,7 @@ function listenRoom(code: string) {
   reactionRef.limitToLast(1).on("child_added", (snap: any) => {
     const r = snap.val();
     if (!r || r.at < now() - 3000) return;
+    if (r.localId && sentReactionIds.delete(r.localId)) return;
     showReaction(r.playerId, r.emoji);
   });
 }
@@ -913,12 +915,22 @@ function showReaction(playerId: string, emoji: string) {
 }
 
 async function sendReaction(emoji: string) {
+  if (!ME.id) return;
+  const reactionEmoji = emoji || "OK";
+  showReaction(ME.id, reactionEmoji);
   if (localMode) {
-    showReaction(ME.id, emoji);
     return;
   }
-  if (!reactionRef || !ME.id) return;
-  await reactionRef.push({ playerId: ME.id, emoji, at: now() });
+  if (!reactionRef) return;
+  const localId = uid();
+  sentReactionIds.add(localId);
+  window.setTimeout(() => sentReactionIds.delete(localId), 5000);
+  try {
+    await reactionRef.push({ playerId: ME.id, emoji: reactionEmoji, at: now(), localId });
+  } catch {
+    sentReactionIds.delete(localId);
+    toast("Nao consegui enviar a reacao para todos.", "#ffc700", 2000);
+  }
 }
 
 async function copiarCodigo() {
