@@ -81,6 +81,22 @@ button,input{font:inherit}
 }
 .setup-card{padding:28px;max-width:380px;display:flex;flex-direction:column;gap:14px}
 .lobby-card{max-width:440px;padding:28px}
+.creator-credit{
+  position:relative;z-index:3;margin-top:14px;
+  font-family:'Orbitron',monospace;font-size:11px;font-weight:900;
+  color:rgba(255,255,255,.72);letter-spacing:2px;text-transform:uppercase;
+  text-align:center;text-shadow:0 2px 12px rgba(0,0,0,.7);
+}
+.creator-credit span{
+  color:var(--gold);text-shadow:0 0 14px var(--gold-glow),0 0 26px rgba(255,199,0,.35);
+}
+.game-short-link{
+  position:relative;z-index:3;margin-top:8px;
+  color:var(--gold);font-size:12px;font-weight:900;text-decoration:none;
+  text-align:center;word-break:break-word;max-width:min(90vw,380px);
+  text-shadow:0 0 12px var(--gold-glow);
+}
+.game-short-link:hover{text-decoration:underline}
 .input-pro{
   background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.12);
   border-radius:var(--rl);padding:14px 18px;color:var(--txt);font-size:16px;outline:none;width:100%;
