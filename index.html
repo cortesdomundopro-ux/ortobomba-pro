@@ -7,6 +7,160 @@
 <meta name="description" content="Jogo de ortografia multiplayer - acerte a letra certa antes da bomba explodir!">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script defer src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<canvas id="bg-canvas"></canvas>
+
+<div id="scr-setup" class="screen active">
+  <div id="setup-tiles-container"></div>
+  <div class="logo-area">
+    <div class="logo-main">ORTO<em>BOMBA</em></div>
+    <div><span class="logo-pro">BOMBA PRO</span></div>
+    <div class="logo-sub">Ortografia em formato de jogo</div>
+  </div>
+  <div class="setup-chars" id="setup-chars"></div>
+  <div class="setup-card">
+    <input type="text" id="nick-input" class="input-pro" placeholder="SEU NICK" maxlength="15" autocomplete="off">
+    <button class="btn btn-purple" id="btn-rapida">PARTIDA RAPIDA GLOBAL</button>
+    <button class="btn btn-rim" id="btn-criar">CRIAR SALA PRIVADA</button>
+    <div style="display:flex;gap:8px">
+      <input type="text" id="code-input" class="input-pro" placeholder="CODIGO" maxlength="15" style="text-transform:uppercase;text-align:center;letter-spacing:4px;font-family:'Orbitron',monospace" autocomplete="off">
+      <button class="btn btn-rim" id="btn-entrar" style="flex-shrink:0;padding:14px 18px">ENTRAR</button>
+    </div>
+    <button id="btn-admin" class="btn-link">ADMIN</button>
+  </div>
+  <div class="creator-credit">Criado por <span>Genilto Silva</span></div>
+  <a class="game-short-link" style="display:none" href="https:///" target="_blank" rel="noopener"></a>
+</div>
+
+<div id="scr-lobby" class="screen">
+  <div class="lobby-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <div class="lbl-small">Codigo da Sala</div>
+        <div class="lobby-code-val" id="lobby-code-val">------</div>
+      </div>
+      <button class="btn btn-gold" id="btn-copiar" style="font-size:11px;padding:10px 14px">COPIAR</button>
+    </div>
+    <div class="lbl-small" style="margin-bottom:12px">Jogadores na sala</div>
+    <div id="players-list" style="margin-bottom:20px;max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:10px"></div>
+    <button class="btn btn-rim" id="btn-start" disabled style="width:100%">AGUARDANDO JOGADORES...</button>
+    <button class="btn-link" id="btn-sair-lobby" style="margin-top:8px">Sair da sala</button>
+  </div>
+</div>
+
+<div id="scr-game" class="screen">
+  <div class="game-topbar">
+    <button class="icon-btn" id="btn-mute" title="Silenciar">Som</button>
+    <div class="round-badge" id="round-badge">RODADA 1</div>
+    <button class="icon-btn" id="btn-sair-jogo" title="Sair">Sair</button>
+  </div>
+  <div class="arena-wrap">
+    <div class="circle-wrapper" id="players-circle">
+      <div class="arena-platform">
+        <div class="arena-floor-disc"></div>
+        <div class="arena-inner-ring"></div>
+        <div class="arena-outer-ring"></div>
+        <div class="arena-floor-ring"></div>
+        <div class="arena-pulse-ring pulse-1"></div>
+        <div class="arena-pulse-ring pulse-2"></div>
+      </div>
+      <div id="bomb-el">
+        <div class="bomb-glow-halo"></div>
+        <div class="bomb-svg-wrap">
+          <div class="bomb-fuse-spark"></div>
+          <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="bGrad" cx="36%" cy="30%">
+                <stop offset="0%" stop-color="#555568"/>
+                <stop offset="55%" stop-color="#1e1e2e"/>
+                <stop offset="100%" stop-color="#0a0a14"/>
+              </radialGradient>
+              <radialGradient id="bShine" cx="28%" cy="22%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.28)"/>
+                <stop offset="60%" stop-color="rgba(255,255,255,0.05)"/>
+                <stop offset="100%" stop-color="transparent"/>
+              </radialGradient>
+              <filter id="bShadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="3" stdDeviation="8" flood-color="#ff007a" flood-opacity="0.8"/>
+              </filter>
+            </defs>
+            <path d="M50 24 Q58 10 68 14 Q76 18 72 8" fill="none" stroke="#8B7250" stroke-width="3.8" stroke-linecap="round"/>
+            <circle cx="50" cy="62" r="34" fill="url(#bGrad)" filter="url(#bShadow)"/>
+            <circle cx="50" cy="62" r="34" fill="url(#bShine)"/>
+            <rect x="26" y="54" width="48" height="20" rx="5" fill="#060610" stroke="rgba(255,199,0,0.35)" stroke-width="1.5"/>
+            <ellipse cx="34" cy="49" rx="8" ry="5.5" fill="rgba(255,255,255,0.07)"/>
+            <rect x="43" y="20" width="14" height="9" rx="3" fill="#0a0a14" stroke="rgba(255,0,122,0.5)" stroke-width="1.5"/>
+          </svg>
+        </div>
+        <div class="led-box" id="bomb-timer">10</div>
+      </div>
+    </div>
+    <div class="q-container" id="q-card" style="display:none">
+      <div class="q-top-bar"></div>
+      <div class="q-cat-label" id="q-cat">CATEGORIA</div>
+      <div id="my-turn-hint" class="my-turn-hint" style="display:none">SUA VEZ - RESPONDA RAPIDO!</div>
+      <div class="q-word-pro" id="q-word">PALAVRA</div>
+      <div class="op-grid" id="opcoes"></div>
+      <div class="q-tip" id="q-tip" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<div id="scr-admin" class="screen">
+  <div class="admin-panel">
+    <div class="admin-header">PAINEL ADMIN</div>
+    <div class="admin-stats">
+      <div class="stat-box"><div class="stat-num" id="stat-rooms">0</div><div class="stat-lbl">Salas</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-players">0</div><div class="stat-lbl">Online</div></div>
+      <div class="stat-box"><div class="stat-num" id="stat-games">0</div><div class="stat-lbl">Em Jogo</div></div>
+    </div>
+    <div class="admin-list" id="admin-rooms-list"></div>
+    <div class="admin-acts">
+      <button class="btn btn-gold" id="btn-admin-voltar">VOLTAR</button>
+      <button class="btn btn-purple" onclick="location.reload()">ATUALIZAR</button>
+      <button class="btn btn-rim" id="btn-limpar" style="background:linear-gradient(135deg,#c00,#700)">LIMPAR TUDO</button>
+    </div>
+  </div>
+</div>
+
+<div class="emoji-menu" id="emoji-menu">
+  <div class="emoji-btn" data-emoji="&#128514;" title="KKK">&#128514;</div>
+  <div class="emoji-btn" data-emoji="&#129313;" title="Zoar">&#129313;</div>
+  <div class="emoji-btn" data-emoji="&#128293;" title="Brabo">&#128293;</div>
+  <div class="emoji-btn" data-emoji="&#128128;" title="Perdeu">&#128128;</div>
+  <div class="emoji-btn" data-emoji="&#128520;" title="Modo caos">&#128520;</div>
+  <div class="emoji-btn" data-emoji="&#128163;" title="Bomba">&#128163;</div>
+  <div class="emoji-btn" data-emoji="&#129398;" title="Congelou">&#129398;</div>
+  <div class="emoji-btn" data-emoji="&#128081;" title="Rei">&#128081;</div>
+</div>
+
+<div id="win-overlay">
+  <div class="win-stars" id="win-stars"></div>
+  <div class="win-crown-anim">WIN</div>
+  <div class="win-title">WIN!</div>
+  <div class="win-sub">VENCEDOR DA PARTIDA</div>
+  <div class="win-name" id="winner-name">-</div>
+  <div class="ranking-section" id="ranking-section"></div>
+  <div class="win-acts">
+    <button class="btn btn-rim" id="btn-jogar-novamente">JOGAR NOVAMENTE</button>
+  </div>
+</div>
+<div id="toast"></div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OrtoBomba PRO</title>
+<meta name="description" content="Jogo de ortografia multiplayer - acerte a letra certa antes da bomba explodir!">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 </head>
