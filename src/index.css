@@ -361,3 +361,5 @@ button,input{font:inherit}
   .setup-card,.lobby-card{padding:20px}
   .q-word-pro{font-size:14px;letter-spacing:2px}
 }
+
+.game-short-link{display:none}
