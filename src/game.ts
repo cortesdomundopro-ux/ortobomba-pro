@@ -64,6 +64,7 @@ let timeoutLock = "";
 let localMode = false;
 let localRoom: Room | null = null;
 let lastTickSecond: number | null = null;
+let reactionEventsBound = false;
 let runtimePlayerId = uid();
 const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
 const REACTION_SPARKS = REACTION_EMOJIS;
@@ -828,17 +829,24 @@ function showReaction(playerId: string, emoji: string) {
   setTimeout(() => pop.remove(), 2000);
 }
 
+function getReactionPlayerId(): string {
+  if (ME.id) return ME.id;
+  const nickMatch = sortedPlayers(GS.players).find((p) => p.online && p.nick === ME.nick);
+  return nickMatch?.id ?? GS.currentTurn ?? sortedPlayers(GS.players)[0]?.id ?? "";
+}
+
 async function sendReaction(emoji: string) {
-  if (!ME.id) return;
+  const reactionPlayerId = getReactionPlayerId();
+  if (!reactionPlayerId) return;
   const localId = uid();
   sentReactionIds.add(localId);
-  showReaction(ME.id, emoji);
+  showReaction(reactionPlayerId, emoji);
   if (localMode || !reactionRef) {
     sentReactionIds.delete(localId);
     return;
   }
   try {
-    await reactionRef.push({ playerId: ME.id, emoji, at: now(), localId });
+    await reactionRef.push({ playerId: reactionPlayerId, emoji, at: now(), localId });
   } catch {
     sentReactionIds.delete(localId);
   }
@@ -944,6 +952,29 @@ function startLocalDemo() {
   showScreen("lobby");
 }
 
+function reactFromButton(btn: HTMLElement, ev: Event) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  const last = Number(btn.dataset.lastReactionAt || 0);
+  if (now() - last < 350) return;
+  btn.dataset.lastReactionAt = String(now());
+  void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+}
+
+function bindReactionEvents() {
+  if (reactionEventsBound) return;
+  reactionEventsBound = true;
+  const react = (ev: Event) => {
+    const target = ev.target;
+    if (!(target instanceof Element)) return;
+    const btn = target.closest<HTMLElement>(".emoji-btn");
+    if (btn) reactFromButton(btn, ev);
+  };
+  document.addEventListener("pointerdown", react, true);
+  document.addEventListener("click", react, true);
+  document.addEventListener("touchend", react, { capture: true, passive: false });
+}
+
 function bindEvents() {
   el<HTMLButtonElement>("btn-rapida").onclick = () => void partidaRapida();
   el<HTMLButtonElement>("btn-criar").onclick = () => void criarSala(false);
@@ -965,26 +996,7 @@ function bindEvents() {
     await db.ref("rooms").remove();
     toast("Salas limpas.");
   };
-  const reactFromButton = (btn: HTMLElement, ev: Event) => {
-    ev.preventDefault();
-    ev.stopPropagation();
-    const last = Number(btn.dataset.lastReactionAt || 0);
-    if (now() - last < 350) return;
-    btn.dataset.lastReactionAt = String(now());
-    void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
-  };
-  document.querySelectorAll<HTMLElement>(".emoji-btn").forEach((btn) => {
-    const react = (ev: Event) => {
-      reactFromButton(btn, ev);
-    };
-    btn.addEventListener("pointerdown", react);
-    btn.addEventListener("touchend", react);
-    btn.addEventListener("click", react);
-  });
-  el<HTMLDivElement>("emoji-menu").addEventListener("touchend", (ev) => {
-    const btn = (ev.target as HTMLElement | null)?.closest<HTMLElement>(".emoji-btn");
-    if (btn) reactFromButton(btn, ev);
-  }, { passive: false });
+  bindReactionEvents();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -992,5 +1004,6 @@ window.addEventListener("DOMContentLoaded", () => {
   const saved = loadNick();
   if (saved) el<HTMLInputElement>("nick-input").value = saved;
   initTiles();
+  bindReactionEvents();
   bindEvents();
 });
