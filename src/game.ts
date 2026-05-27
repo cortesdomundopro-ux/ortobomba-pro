@@ -514,7 +514,7 @@ async function startGame() {
   await salaRef.update(startRoomState(room));
 }
 
-function startRoomState(room: Room): Partial<Room> {
+function startRoomState(room: Room): Room {
   const players: Record<string, Player> = {};
   sortedPlayers(room.players).forEach((p) => {
     players[p.id] = { ...p, lives: 3, score: 0, eliminatedAt: null, online: true };
@@ -522,6 +522,7 @@ function startRoomState(room: Room): Partial<Room> {
   const first = sortedPlayers(players)[0];
   const { idx, q, used } = chooseQuestion([]);
   return {
+    ...room,
     status: "playing",
     players,
     currentTurn: first?.id ?? null,
@@ -543,10 +544,7 @@ function renderGame() {
   const isMobile = window.innerWidth < 600;
   const radius = isMobile ? 110 : 180;
   
-  // Limpar slots antigos
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
-  
-  // Atualizar Round
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
 
   players.forEach((p, i) => {
@@ -593,7 +591,7 @@ function renderQuestion() {
   card.style.display = "block";
   el<HTMLDivElement>("q-cat").textContent = q.cat.toUpperCase();
   
-  // CORREÇÃO: Espaçamento para palavras em branco
+  // CORREÇÃO: Usando nomes de propriedades baseados nos erros do TS (w, ops, r)
   const wordDisplay = q.w.replace(/__/g, ' <span class="q-blank-pro">__</span> ').replace(/_/g, ' <span class="q-blank-pro">_</span> ');
   el<HTMLDivElement>("q-word").innerHTML = wordDisplay;
 
@@ -623,7 +621,6 @@ function stopTimer() {
 function updateTimer() {
   if (GS.status !== "playing") { stopTimer(); return; }
   
-  // MODO INFINITO: Dificuldade progressiva
   const baseDuration = Math.max(3, 10.5 - ((GS.roundCount || 1) * 0.5));
   const elapsed = (now() - GS.turnStartedAt) / 1000;
   const remaining = Math.max(0, Math.ceil(baseDuration - elapsed));
@@ -651,7 +648,8 @@ function updateTimer() {
 async function handleTimeout() {
   playBoom();
   if (localMode && localRoom) {
-    localRoom = applyAnswerToRoom(localRoom, GS.currentTurn ?? "", false);
+    const nextState = applyAnswerToRoom(localRoom, GS.currentTurn ?? "", false);
+    localRoom = { ...localRoom, ...nextState };
     GS = localRoom;
     afterRoomMutation();
   } else if (salaRef) {
@@ -667,7 +665,8 @@ async function submitAnswer(ans: string) {
   else playBoom();
 
   if (localMode && localRoom) {
-    localRoom = applyAnswerToRoom(localRoom, ME.id, isCorrect);
+    const nextState = applyAnswerToRoom(localRoom, ME.id, isCorrect);
+    localRoom = { ...localRoom, ...nextState };
     GS = localRoom;
     afterRoomMutation();
   } else if (salaRef) {
@@ -677,10 +676,10 @@ async function submitAnswer(ans: string) {
   }
 }
 
-function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Partial<Room> {
+function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Room {
   const players = { ...room.players };
   const player = players[playerId];
-  if (!player) return {};
+  if (!player) return room;
 
   if (!correct) {
     player.lives -= 1;
@@ -695,6 +694,7 @@ function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Part
   const alive = Object.values(players).filter(p => p.lives > 0 && p.online);
   if (alive.length <= 1) {
     return {
+      ...room,
       players,
       status: "finished",
       winnerId: alive[0]?.id ?? playerId,
@@ -702,7 +702,6 @@ function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Part
     };
   }
 
-  // Próximo Turno
   const sortedIds = sortedPlayers(players).map(p => p.id);
   const aliveIds = alive.map(p => p.id);
   let currentIndex = sortedIds.indexOf(playerId);
@@ -711,7 +710,7 @@ function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Part
 
   for (let i = 1; i <= sortedIds.length; i++) {
     const nextIdx = (currentIndex + i) % sortedIds.length;
-    if (nextIdx === 0) newRound++; // Aumenta rodada ao completar o círculo
+    if (nextIdx === 0) newRound++;
     const candidate = sortedIds[nextIdx];
     if (aliveIds.includes(candidate)) {
       nextId = candidate;
@@ -721,6 +720,7 @@ function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Part
 
   const { idx, q, used } = chooseQuestion(room.usedQ);
   return {
+    ...room,
     players,
     currentTurn: nextId,
     currentQIndex: idx,
@@ -750,7 +750,7 @@ async function jogarNovamente() {
   el<HTMLDivElement>("win-overlay").style.display = "none";
   winnerSaved = false;
   if (localMode && localRoom) {
-    localRoom = { ...localRoom, ...startRoomState(localRoom) };
+    localRoom = startRoomState(localRoom);
     GS = localRoom;
     afterRoomMutation();
     return;
