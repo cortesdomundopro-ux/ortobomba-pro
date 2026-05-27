@@ -576,7 +576,14 @@ function renderGame() {
   const players = sortedPlayers(GS.players);
   const count = players.length;
   const isMobile = window.innerWidth < 600;
-  const radius = isMobile ? 110 : 180;
+  const circleSize = isMobile
+    ? Math.min(Math.max(window.innerWidth * 0.78, 260), 310)
+    : window.innerWidth >= 1024
+      ? 560
+      : 420;
+  const radius = isMobile
+    ? (count >= 5 ? circleSize * 0.385 : circleSize * 0.39)
+    : (count >= 5 ? circleSize * 0.38 : circleSize * 0.34);
   const arrow = el<HTMLDivElement>("turn-arrow");
   const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
   
