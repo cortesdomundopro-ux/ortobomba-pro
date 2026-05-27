@@ -392,6 +392,29 @@ button,input{font:inherit}
 .arena-floor-ring{display:none!important}
 
 @media(max-width:600px){
+  #scr-game.active{
+    height:100dvh;
+    min-height:100dvh;
+    justify-content:center!important;
+    overflow:hidden;
+    padding:52px 10px 92px;
+    gap:8px;
+  }
+  #scr-game.active .arena-wrap{
+    flex:0 0 auto;
+    transform:translateY(-8px);
+  }
+  #scr-game.active .circle-wrapper{
+    width:clamp(260px,78vw,310px);
+    height:clamp(260px,78vw,310px);
+    margin:0 auto;
+  }
+  #scr-game.active .q-container{
+    margin-top:-4px;
+    margin-bottom:0;
+    width:min(92vw,430px);
+    padding:17px;
+  }
   #scr-game.active.no-question{
     justify-content:center!important;
     overflow:hidden;
@@ -400,26 +423,22 @@ button,input{font:inherit}
   }
   #scr-game.active.no-question .arena-wrap{
     justify-content:center;
-    min-height:calc(100dvh - 160px);
+    min-height:0;
+    transform:translateY(0);
   }
   #scr-game.active.no-question .circle-wrapper{
     margin:0 auto;
   }
-  #scr-game.active:not(.no-question){
-    padding-top:54px;
-    padding-bottom:108px;
-  }
-  #scr-game.active:not(.no-question) .circle-wrapper{
-    margin-top:0;
-  }
   .emoji-menu{
     bottom:calc(12px + env(safe-area-inset-bottom));
     touch-action:manipulation;
+    pointer-events:auto;
   }
   .emoji-btn{
     touch-action:manipulation;
     -webkit-user-select:none;
     user-select:none;
+    pointer-events:auto;
   }
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}

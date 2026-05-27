@@ -538,6 +538,7 @@ function startRoomState(room: Room): Room {
 
 function renderGame() {
   const circle = el<HTMLDivElement>("players-circle");
+  const bomb = el<HTMLDivElement>("bomb-el");
   const players = sortedPlayers(GS.players);
   const count = players.length;
   const isMobile = window.innerWidth < 600;
@@ -547,6 +548,7 @@ function renderGame() {
   
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
   arrow.style.display = "none";
+  bomb.style.transform = "translate(-50%, -50%)";
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
@@ -576,8 +578,18 @@ function renderGame() {
     if (isTurn) {
       arrow.style.display = "block";
       arrow.style.transform = `rotate(${angle + 90}deg)`;
+      const bombStep = isMobile ? 0.44 : 0.5;
+      bomb.style.transform = `translate(calc(-50% + ${x * bombStep}px), calc(-50% + ${y * bombStep}px))`;
     }
   });
+
+  if (prevTurnId !== GS.currentTurn) {
+    prevTurnId = GS.currentTurn;
+    bomb.classList.remove("pass-pop");
+    void bomb.offsetWidth;
+    bomb.classList.add("pass-pop");
+    window.setTimeout(() => bomb.classList.remove("pass-pop"), 480);
+  }
 
   if (isMyTurn) {
     renderQuestion();
@@ -763,8 +775,9 @@ async function jogarNovamente() {
 }
 
 function showReaction(playerId: string, emoji: string) {
-  const slot = document.querySelector<HTMLElement>(`.p-slot[data-player-id="${attrEsc(playerId)}"]`);
-  if (!slot) return;
+  const slot =
+    document.querySelector<HTMLElement>(`.p-slot[data-player-id="${attrEsc(playerId)}"]`) ??
+    el<HTMLDivElement>("emoji-menu");
   const pop = document.createElement("div");
   pop.className = "reaction-pop";
   pop.textContent = normalizeReactionEmoji(emoji);
@@ -900,18 +913,26 @@ function bindEvents() {
     await db.ref("rooms").remove();
     toast("Salas limpas.");
   };
+  const reactFromButton = (btn: HTMLElement, ev: Event) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const last = Number(btn.dataset.lastReactionAt || 0);
+    if (now() - last < 350) return;
+    btn.dataset.lastReactionAt = String(now());
+    void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+  };
   document.querySelectorAll<HTMLElement>(".emoji-btn").forEach((btn) => {
     const react = (ev: Event) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-      const last = Number(btn.dataset.lastReactionAt || 0);
-      if (now() - last < 350) return;
-      btn.dataset.lastReactionAt = String(now());
-      void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+      reactFromButton(btn, ev);
     };
     btn.addEventListener("pointerdown", react);
+    btn.addEventListener("touchend", react);
     btn.addEventListener("click", react);
   });
+  el<HTMLDivElement>("emoji-menu").addEventListener("touchend", (ev) => {
+    const btn = (ev.target as HTMLElement | null)?.closest<HTMLElement>(".emoji-btn");
+    if (btn) reactFromButton(btn, ev);
+  }, { passive: false });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
