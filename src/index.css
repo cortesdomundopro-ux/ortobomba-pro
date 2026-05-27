@@ -930,6 +930,13 @@ button,input{font:inherit}
 }
 
 @media(min-width:601px){
+  #bomb-el .bomb-glow-halo{
+    display:block!important;
+    animation:haloBreath 1.05s infinite alternate ease-in-out!important;
+  }
+  #bomb-el .bomb-fuse-spark{
+    animation:fuseAnim .18s infinite alternate ease-in-out!important;
+  }
   #bomb-el.warning .bomb-svg-wrap{
     animation:bombWarningPulse .42s infinite alternate ease-in-out!important;
   }
