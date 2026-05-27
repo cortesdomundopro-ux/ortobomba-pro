@@ -543,8 +543,10 @@ function renderGame() {
   const count = players.length;
   const isMobile = window.innerWidth < 600;
   const radius = isMobile ? 110 : 180;
+  const arrow = el<HTMLDivElement>("turn-arrow");
   
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
+  arrow.style.display = "none";
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
 
   players.forEach((p, i) => {
@@ -571,7 +573,6 @@ function renderGame() {
     circle.appendChild(slot);
     
     if (isTurn) {
-      const arrow = el<HTMLDivElement>("turn-arrow");
       arrow.style.display = "block";
       arrow.style.transform = `rotate(${angle + 90}deg)`;
     }
@@ -797,6 +798,46 @@ function cleanupRoom(updateRemote = true) {
   ME.host = false;
 }
 
+async function sairSala() {
+  const roomCode = ME.salaId;
+  const wasHost = ME.host;
+  const ref = salaRef;
+
+  if (localMode) {
+    cleanupRoom(false);
+    localRoom = null;
+    GS = emptyRoom("");
+    showScreen("setup");
+    return;
+  }
+
+  cleanupRoom(false);
+  showScreen("setup");
+
+  if (!ref || !ME.id) return;
+  try {
+    if (wasHost) {
+      const snap = await ref.once("value");
+      const room = normalizeRoom(snap.val() ?? emptyRoom(roomCode));
+      const remaining = sortedPlayers(room.players).filter((p) => p.id !== ME.id);
+      if (!remaining.length) {
+        await ref.remove();
+        return;
+      }
+      await ref.update({
+        hostId: remaining[0].id,
+        [`players/${ME.id}/online`]: false,
+        updatedAt: now()
+      });
+      return;
+    }
+    await ref.child(`players/${ME.id}`).update({ online: false });
+    await ref.child("updatedAt").set(now());
+  } catch {
+    toast("Nao foi possivel sair da sala agora.", "#ff3535");
+  }
+}
+
 async function adminPanel() {
   const code = prompt("Codigo admin:");
   if (code !== ADMIN_CODE) { toast("Codigo admin incorreto.", "#ff3535"); return; }
@@ -845,6 +886,19 @@ function bindEvents() {
   el<HTMLButtonElement>("btn-admin").onclick = () => void adminPanel();
   el<HTMLButtonElement>("btn-jogar-novamente").onclick = () => void jogarNovamente();
   el<HTMLButtonElement>("btn-copiar").onclick = () => void copiarCodigo();
+  el<HTMLButtonElement>("btn-sair-lobby").onclick = () => void sairSala();
+  el<HTMLButtonElement>("btn-sair-jogo").onclick = () => void sairSala();
+  el<HTMLButtonElement>("btn-admin-voltar").onclick = () => showScreen("setup");
+  el<HTMLButtonElement>("btn-mute").onclick = () => {
+    muted = !muted;
+    el<HTMLButtonElement>("btn-mute").textContent = muted ? "Mudo" : "Som";
+  };
+  el<HTMLButtonElement>("btn-limpar").onclick = async () => {
+    if (!db) return;
+    if (!confirm("Limpar todas as salas?")) return;
+    await db.ref("rooms").remove();
+    toast("Salas limpas.");
+  };
   document.querySelectorAll<HTMLElement>(".emoji-btn").forEach((btn) => {
     btn.onclick = () => void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
   });
