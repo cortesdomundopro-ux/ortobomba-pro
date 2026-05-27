@@ -17,7 +17,15 @@ const ADMIN_CODE: string =
 const TURN_DURATION = 10;
 const MAX_PLAYERS = 6;
 const PLAYER_STALE_MS = 35_000;
-const BOMB_PASS_MS = 760;
+const BOMB_PASS_MS = 940;
+const AVATAR_BODY_PALETTES = [
+  { shirt: "#7a35ff", shirt2: "#4c1ccf", pants: "#20304f", shoe: "#ff7a1c", skin: "#f4b18f" },
+  { shirt: "#ff6fae", shirt2: "#26c6da", pants: "#27324f", shoe: "#ff82a9", skin: "#a85f38" },
+  { shirt: "#ff8a18", shirt2: "#ffcf3f", pants: "#24304d", shoe: "#39d0ff", skin: "#c77334" },
+  { shirt: "#35d6b4", shirt2: "#ff73a8", pants: "#2b2f55", shoe: "#ffd23d", skin: "#d88a5a" },
+  { shirt: "#2fd56f", shirt2: "#ffe44f", pants: "#1f3762", shoe: "#ff7b2f", skin: "#b66b32" },
+  { shirt: "#f5f5ff", shirt2: "#111827", pants: "#303a54", shoe: "#70e0ff", skin: "#e5b28f" }
+];
 
 declare const firebase: any;
 
@@ -123,8 +131,8 @@ function avatarHtml(skinIndex: number): string {
   const idx = skinIndexOf(skinIndex);
   const src = AVATAR_IMAGES[idx];
   const fallback = `<span class="avatar-fallback">${ANIMALS[idx]}</span>`;
-  if (!src) return fallback;
-  return `${fallback}<img class="avatar-art" src="${esc(src)}" alt="" draggable="false" loading="eager" onload="this.previousElementSibling.style.display='none'" onerror="this.style.display='none';this.previousElementSibling.style.display='block'">`;
+  if (!src) return `<span class="avatar-head">${fallback}</span>`;
+  return `<span class="avatar-head">${fallback}<img class="avatar-art" src="${esc(src)}" alt="" draggable="false" loading="eager" onload="this.previousElementSibling.style.display='none'" onerror="this.style.display='none';this.previousElementSibling.style.display='block'"></span>`;
 }
 
 function normalizeReactionEmoji(raw: string): string {
@@ -715,6 +723,17 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   window.setTimeout(finishPass, BOMB_PASS_MS + 90);
 }
 
+function setBombFuseProgress(ratio: number) {
+  const bomb = document.getElementById("bomb-el");
+  if (!bomb) return;
+  const visibleRatio = Math.max(0, Math.min(1, ratio));
+  const burned = 1 - visibleRatio;
+  bomb.style.setProperty("--fuse-visible", `${Math.max(4, 48 * visibleRatio).toFixed(1)}px`);
+  bomb.style.setProperty("--spark-x", `${(-18 * burned).toFixed(1)}px`);
+  bomb.style.setProperty("--spark-y", `${(13 * burned).toFixed(1)}px`);
+  bomb.style.setProperty("--spark-scale", `${(1 + burned * 0.42).toFixed(2)}`);
+}
+
 function renderGame() {
   const circle = el<HTMLDivElement>("players-circle");
   const bomb = el<HTMLDivElement>("bomb-el");
@@ -733,7 +752,7 @@ function renderGame() {
   const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
   const previousTurnId = prevTurnId;
   const turnChanged = previousTurnId !== GS.currentTurn;
-  const bombStep = isMobile ? 0.58 : 0.62;
+  const bombStep = isMobile ? 0.54 : 0.58;
   const bombPoints = new Map<string, BombPoint>();
   const layout = players.map((p, i) => {
     const angle = (360 / count) * i - 90;
@@ -742,6 +761,7 @@ function renderGame() {
     return { p, angle, x, y };
   });
   const activeLayout = layout.find((item) => item.p.id === GS.currentTurn);
+  const previousLayout = layout.find((item) => item.p.id === previousTurnId);
   let targetBombPoint: BombPoint = { x: 0, y: 0 };
   
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
@@ -750,38 +770,78 @@ function renderGame() {
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
   layout.forEach(({ p, angle, x, y }) => {
-    const aimAngle = Math.atan2(-y, -x) * 180 / Math.PI;
-    const lookTarget = activeLayout && activeLayout.p.id !== p.id
-      ? { x: activeLayout.x, y: activeLayout.y }
-      : { x: 0, y: 0 };
-    const lookDx = lookTarget.x - x;
-    const lookDy = lookTarget.y - y;
-    const lookDistance = Math.max(1, Math.hypot(lookDx, lookDy));
-    const lookX = Math.max(-10, Math.min(10, (-lookDy / lookDistance) * 8));
-    const lookY = Math.max(-13, Math.min(13, (lookDx / lookDistance) * 11));
-    const lookRoll = Math.max(-5, Math.min(5, (lookDx / lookDistance) * -4));
     const bombPoint = { x: x * bombStep, y: y * bombStep };
     const isTurn = p.id === GS.currentTurn;
     const isEliminated = p.lives <= 0;
     const isHost = p.id === GS.hostId;
     const isThrowingFrom = turnChanged && previousTurnId === p.id && !isTurn && !isEliminated;
     const isCatchingTo = turnChanged && Boolean(previousTurnId) && isTurn && !isEliminated;
+    const handTarget = isThrowingFrom && activeLayout
+      ? { x: activeLayout.x, y: activeLayout.y }
+      : isCatchingTo && previousLayout
+        ? { x: previousLayout.x, y: previousLayout.y }
+        : { x: 0, y: 0 };
+    const aimDx = handTarget.x - x;
+    const aimDy = handTarget.y - y;
+    const aimDistance = Math.max(1, Math.hypot(aimDx, aimDy));
+    const aimAngle = Math.atan2(aimDy, aimDx) * 180 / Math.PI;
+    const lookTarget = isThrowingFrom && activeLayout
+      ? { x: activeLayout.x, y: activeLayout.y }
+      : isCatchingTo && previousLayout
+        ? { x: previousLayout.x, y: previousLayout.y }
+        : activeLayout && activeLayout.p.id !== p.id
+          ? { x: activeLayout.x, y: activeLayout.y }
+          : { x: 0, y: 0 };
+    const lookDx = lookTarget.x - x;
+    const lookDy = lookTarget.y - y;
+    const lookDistance = Math.max(1, Math.hypot(lookDx, lookDy));
+    const lookX = Math.max(-18, Math.min(18, (-lookDy / lookDistance) * 15));
+    const lookY = Math.max(-22, Math.min(22, (lookDx / lookDistance) * 18));
+    const lookRoll = Math.max(-7, Math.min(7, (lookDx / lookDistance) * -6));
+    const faceShiftX = Math.max(-5, Math.min(5, (lookDx / lookDistance) * 4));
+    const faceShiftY = Math.max(-5, Math.min(5, (lookDy / lookDistance) * 3));
+    const hopX = Math.cos((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10);
+    const hopY = Math.sin((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10) - (isMobile ? 8 : 12);
+    const palette = AVATAR_BODY_PALETTES[skinIndexOf(p.skinIndex) % AVATAR_BODY_PALETTES.length];
 
     bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
     slot.className = `p-slot ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
-    slot.style.transform = `translate(${x}px, ${y}px)`;
+    slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
+    slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
+    slot.style.setProperty("--slot-hop-x", `${hopX.toFixed(1)}px`);
+    slot.style.setProperty("--slot-hop-y", `${hopY.toFixed(1)}px`);
+    slot.style.transform = "translate(var(--slot-x), var(--slot-y))";
     slot.style.setProperty("--aim-angle", `${aimAngle.toFixed(1)}deg`);
     slot.style.setProperty("--hands-rotate", `${(aimAngle + 90).toFixed(1)}deg`);
     slot.style.setProperty("--look-x", `${lookX.toFixed(1)}deg`);
     slot.style.setProperty("--look-y", `${lookY.toFixed(1)}deg`);
     slot.style.setProperty("--look-roll", `${lookRoll.toFixed(1)}deg`);
+    slot.style.setProperty("--face-shift-x", `${faceShiftX.toFixed(1)}px`);
+    slot.style.setProperty("--face-shift-y", `${faceShiftY.toFixed(1)}px`);
+    slot.style.setProperty("--aim-distance", `${aimDistance.toFixed(1)}px`);
+    slot.style.setProperty("--avatar-shirt", palette.shirt);
+    slot.style.setProperty("--avatar-shirt-2", palette.shirt2);
+    slot.style.setProperty("--avatar-pants", palette.pants);
+    slot.style.setProperty("--avatar-shoe", palette.shoe);
+    slot.style.setProperty("--avatar-skin", palette.skin);
     slot.dataset.playerId = p.id;
     
     slot.innerHTML = `
       <div class="p-avatar-wrap">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
+        <span class="avatar-ground" aria-hidden="true"></span>
+        <span class="avatar-body" aria-hidden="true">
+          <span class="avatar-neck"></span>
+          <span class="avatar-torso"></span>
+          <span class="avatar-arm avatar-arm-a"></span>
+          <span class="avatar-arm avatar-arm-b"></span>
+          <span class="avatar-leg avatar-leg-a"></span>
+          <span class="avatar-leg avatar-leg-b"></span>
+          <span class="avatar-shoe avatar-shoe-a"></span>
+          <span class="avatar-shoe avatar-shoe-b"></span>
+        </span>
         <span class="throw-arm throw-arm-a" aria-hidden="true"></span>
         <span class="throw-arm throw-arm-b" aria-hidden="true"></span>
         <span class="hold-hands" aria-hidden="true"></span>
@@ -850,6 +910,8 @@ function renderQuestion() {
 
 function startTimer() {
   stopTimer();
+  setBombFuseProgress(1);
+  updateTimer();
   bombTimerInterval = setInterval(updateTimer, 100);
 }
 
@@ -857,7 +919,9 @@ function stopTimer() {
   if (bombTimerInterval) clearInterval(bombTimerInterval);
   bombTimerInterval = null;
   lastTickSecond = null;
-  document.getElementById("bomb-el")?.classList.remove("warning", "danger");
+  const bomb = document.getElementById("bomb-el");
+  bomb?.classList.remove("warning", "danger");
+  setBombFuseProgress(1);
   document.getElementById("bomb-timer")?.classList.remove("danger");
   document.querySelectorAll(".p-avatar-wrap").forEach((av) => av.classList.remove("panic"));
 }
@@ -868,6 +932,7 @@ function updateTimer() {
   const baseDuration = Math.max(3, 10.5 - ((GS.roundCount || 1) * 0.5));
   const elapsed = (now() - GS.turnStartedAt) / 1000;
   const remaining = Math.max(0, Math.ceil(baseDuration - elapsed));
+  const fuseRatio = Math.max(0, Math.min(1, (baseDuration - elapsed) / baseDuration));
   
   const timer = el<HTMLDivElement>("bomb-timer");
   timer.textContent = String(remaining).padStart(2, "0");
@@ -877,6 +942,7 @@ function updateTimer() {
   const bomb = el<HTMLDivElement>("bomb-el");
   bomb.classList.toggle("danger", isDanger);
   bomb.classList.toggle("warning", isWarning);
+  setBombFuseProgress(fuseRatio);
   
   if (remaining <= 3 && remaining > 0) {
     document.querySelectorAll(".p-avatar-wrap").forEach(av => av.classList.add("panic"));
