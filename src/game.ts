@@ -832,15 +832,21 @@ function showReaction(playerId: string, emoji: string) {
 function getReactionPlayerId(): string {
   if (ME.id) return ME.id;
   const nickMatch = sortedPlayers(GS.players).find((p) => p.online && p.nick === ME.nick);
-  return nickMatch?.id ?? GS.currentTurn ?? sortedPlayers(GS.players)[0]?.id ?? "";
+  const visiblePlayer =
+    document.querySelector<HTMLElement>(".p-slot:not(.eliminated)")?.dataset.playerId ??
+    document.querySelector<HTMLElement>(".p-slot")?.dataset.playerId;
+  return nickMatch?.id ?? GS.currentTurn ?? sortedPlayers(GS.players)[0]?.id ?? visiblePlayer ?? "";
 }
 
 async function sendReaction(emoji: string) {
   const reactionPlayerId = getReactionPlayerId();
-  if (!reactionPlayerId) return;
   const localId = uid();
   sentReactionIds.add(localId);
   showReaction(reactionPlayerId, emoji);
+  if (!reactionPlayerId) {
+    sentReactionIds.delete(localId);
+    return;
+  }
   if (localMode || !reactionRef) {
     sentReactionIds.delete(localId);
     return;
