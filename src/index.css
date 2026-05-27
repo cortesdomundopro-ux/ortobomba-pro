@@ -389,6 +389,80 @@ button,input{font:inherit}
 
 .game-short-link{display:none}
 
+#bomb-el.warning .bomb-svg-wrap{
+  animation:bombWarningPulse .42s infinite alternate ease-in-out;
+  filter:drop-shadow(0 0 18px rgba(255,199,0,.72));
+}
+#bomb-el.warning .bomb-glow-halo{
+  display:block;
+  background:radial-gradient(circle,rgba(255,199,0,.38) 0%,rgba(255,0,122,.28) 45%,transparent 72%);
+  animation:bombWarningHalo .42s infinite alternate ease-in-out;
+}
+#bomb-el.danger .bomb-svg-wrap{
+  animation:bombDangerPulse .16s infinite alternate ease-in-out;
+  filter:drop-shadow(0 0 22px rgba(255,32,32,.9)) drop-shadow(0 0 44px rgba(255,0,122,.72));
+}
+#bomb-el.danger .bomb-glow-halo{
+  display:block;
+  background:radial-gradient(circle,rgba(255,32,32,.62) 0%,rgba(255,0,122,.46) 42%,transparent 76%);
+  animation:bombDangerHalo .18s infinite alternate ease-in-out;
+}
+#bomb-el.danger .bomb-fuse-spark{
+  width:19px;
+  height:19px;
+  animation:fuseDanger .09s infinite alternate ease-in-out;
+}
+@keyframes bombWarningPulse{
+  from{transform:scale(1);opacity:.9}
+  to{transform:scale(1.08);opacity:1}
+}
+@keyframes bombWarningHalo{
+  from{transform:scale(1);opacity:.65}
+  to{transform:scale(1.55);opacity:1}
+}
+@keyframes bombDangerPulse{
+  from{transform:translate(-1px,1px) scale(1.03) rotate(-2deg);opacity:.72}
+  to{transform:translate(2px,-1px) scale(1.16) rotate(2deg);opacity:1}
+}
+@keyframes bombDangerHalo{
+  from{transform:scale(1.15);opacity:.45}
+  to{transform:scale(1.85);opacity:1}
+}
+@keyframes fuseDanger{
+  from{transform:scale(1.3) rotate(-16deg);opacity:.55}
+  to{transform:scale(2.7) rotate(24deg);opacity:1}
+}
+.p-avatar-wrap.reaction-hit{
+  animation:reactionAvatarHit .46s ease both;
+}
+@keyframes reactionAvatarHit{
+  0%{filter:saturate(1);box-shadow:0 4px 20px rgba(0,0,0,.7),0 0 8px rgba(0,0,0,.5)}
+  45%{filter:saturate(1.35) brightness(1.18);box-shadow:0 0 0 6px rgba(255,199,0,.35),0 0 34px rgba(255,199,0,.95),0 0 56px rgba(255,0,122,.65)}
+  100%{filter:saturate(1);box-shadow:0 4px 20px rgba(0,0,0,.7),0 0 8px rgba(0,0,0,.5)}
+}
+.reaction-pop{
+  will-change:top,transform,opacity;
+}
+.reaction-burst{
+  display:block;
+}
+.reaction-spark{
+  display:block;
+  user-select:none;
+}
+
+@media(prefers-reduced-motion:reduce){
+  #bomb-el.warning .bomb-svg-wrap,
+  #bomb-el.danger .bomb-svg-wrap,
+  #bomb-el.warning .bomb-glow-halo,
+  #bomb-el.danger .bomb-glow-halo,
+  #bomb-el.danger .bomb-fuse-spark,
+  .p-avatar-wrap.reaction-hit{
+    animation:none!important;
+  }
+  .reaction-spark{display:none!important}
+}
+
 .arena-floor-ring{display:none!important}
 
 @media(max-width:600px){
@@ -806,3 +880,52 @@ button,input{font:inherit}
 }
 
 .game-short-link{display:none}
+
+#bomb-el.warning .bomb-svg-wrap{
+  animation:bombWarningPulse .42s infinite alternate ease-in-out;
+  filter:drop-shadow(0 0 18px rgba(255,199,0,.72));
+}
+#bomb-el.warning .bomb-glow-halo{
+  display:block;
+  background:radial-gradient(circle,rgba(255,199,0,.38) 0%,rgba(255,0,122,.28) 45%,transparent 72%);
+  animation:bombWarningHalo .42s infinite alternate ease-in-out;
+}
+#bomb-el.danger .bomb-svg-wrap{
+  animation:bombDangerPulse .16s infinite alternate ease-in-out;
+  filter:drop-shadow(0 0 22px rgba(255,32,32,.9)) drop-shadow(0 0 44px rgba(255,0,122,.72));
+}
+#bomb-el.danger .bomb-glow-halo{
+  display:block;
+  background:radial-gradient(circle,rgba(255,32,32,.62) 0%,rgba(255,0,122,.46) 42%,transparent 76%);
+  animation:bombDangerHalo .18s infinite alternate ease-in-out;
+}
+#bomb-el.danger .bomb-fuse-spark{
+  width:19px;
+  height:19px;
+  animation:fuseDanger .09s infinite alternate ease-in-out;
+}
+.p-avatar-wrap.reaction-hit{
+  animation:reactionAvatarHit .46s ease both;
+}
+.reaction-pop{
+  will-change:top,transform,opacity;
+}
+.reaction-burst{
+  display:block;
+}
+.reaction-spark{
+  display:block;
+  user-select:none;
+}
+
+@media(prefers-reduced-motion:reduce){
+  #bomb-el.warning .bomb-svg-wrap,
+  #bomb-el.danger .bomb-svg-wrap,
+  #bomb-el.warning .bomb-glow-halo,
+  #bomb-el.danger .bomb-glow-halo,
+  #bomb-el.danger .bomb-fuse-spark,
+  .p-avatar-wrap.reaction-hit{
+    animation:none!important;
+  }
+  .reaction-spark{display:none!important}
+}

@@ -629,6 +629,10 @@ function startTimer() {
 function stopTimer() {
   if (bombTimerInterval) clearInterval(bombTimerInterval);
   bombTimerInterval = null;
+  lastTickSecond = null;
+  document.getElementById("bomb-el")?.classList.remove("warning", "danger");
+  document.getElementById("bomb-timer")?.classList.remove("danger");
+  document.querySelectorAll(".p-avatar-wrap").forEach((av) => av.classList.remove("panic"));
 }
 
 function updateTimer() {
@@ -640,7 +644,12 @@ function updateTimer() {
   
   const timer = el<HTMLDivElement>("bomb-timer");
   timer.textContent = String(remaining).padStart(2, "0");
-  timer.classList.toggle("danger", remaining <= 3);
+  const isDanger = remaining <= 3 && remaining > 0;
+  const isWarning = remaining <= 5 && remaining > 3;
+  timer.classList.toggle("danger", isDanger);
+  const bomb = el<HTMLDivElement>("bomb-el");
+  bomb.classList.toggle("danger", isDanger);
+  bomb.classList.toggle("warning", isWarning);
   
   if (remaining <= 3 && remaining > 0) {
     document.querySelectorAll(".p-avatar-wrap").forEach(av => av.classList.add("panic"));
@@ -778,18 +787,61 @@ function showReaction(playerId: string, emoji: string) {
   const slot =
     document.querySelector<HTMLElement>(`.p-slot[data-player-id="${attrEsc(playerId)}"]`) ??
     el<HTMLDivElement>("emoji-menu");
+  const safeEmoji = normalizeReactionEmoji(emoji);
   const pop = document.createElement("div");
   pop.className = "reaction-pop";
-  pop.textContent = normalizeReactionEmoji(emoji);
+  pop.textContent = safeEmoji;
+  pop.setAttribute("aria-hidden", "true");
   slot.appendChild(pop);
+
+  const avatar = slot.querySelector<HTMLElement>(".p-avatar-wrap");
+  if (avatar && !prefersReducedMotion.matches) {
+    avatar.classList.remove("reaction-hit");
+    void avatar.offsetWidth;
+    avatar.classList.add("reaction-hit");
+    window.setTimeout(() => avatar.classList.remove("reaction-hit"), 460);
+  }
+
+  if (!prefersReducedMotion.matches) {
+    const burst = document.createElement("div");
+    burst.className = "reaction-burst";
+    burst.setAttribute("aria-hidden", "true");
+    const sparkCount = 10;
+    for (let i = 0; i < sparkCount; i++) {
+      const spark = document.createElement("span");
+      spark.className = "reaction-spark";
+      spark.textContent = REACTION_SPARKS[i % REACTION_SPARKS.length];
+      const angle = -112 + (224 / (sparkCount - 1)) * i;
+      const dist = 34 + (i % 3) * 12;
+      const tx = Math.cos((angle * Math.PI) / 180) * dist;
+      const ty = Math.sin((angle * Math.PI) / 180) * dist - 16;
+      spark.style.setProperty("--tx", `${tx.toFixed(1)}px`);
+      spark.style.setProperty("--ty", `${ty.toFixed(1)}px`);
+      spark.style.setProperty("--rot", `${Math.round(angle * 1.6)}deg`);
+      spark.style.setProperty("--del", `${(i % 4) * 0.035}s`);
+      burst.appendChild(spark);
+    }
+    slot.appendChild(burst);
+    window.setTimeout(() => burst.remove(), 1250);
+  }
+
   setTimeout(() => pop.remove(), 2000);
 }
 
 async function sendReaction(emoji: string) {
   if (!ME.id) return;
+  const localId = uid();
+  sentReactionIds.add(localId);
   showReaction(ME.id, emoji);
-  if (localMode || !reactionRef) return;
-  await reactionRef.push({ playerId: ME.id, emoji, at: now() });
+  if (localMode || !reactionRef) {
+    sentReactionIds.delete(localId);
+    return;
+  }
+  try {
+    await reactionRef.push({ playerId: ME.id, emoji, at: now(), localId });
+  } catch {
+    sentReactionIds.delete(localId);
+  }
 }
 
 async function copiarCodigo() {
