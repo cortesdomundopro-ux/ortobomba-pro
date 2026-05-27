@@ -65,6 +65,7 @@ let localMode = false;
 let localRoom: Room | null = null;
 let lastTickSecond: number | null = null;
 let reactionEventsBound = false;
+let lastRoomSignature = "";
 let runtimePlayerId = uid();
 const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
 const REACTION_SPARKS = REACTION_EMOJIS;
@@ -427,6 +428,7 @@ async function joinRoom(code: string) {
 function listenRoom(code: string) {
   if (salaRef) salaRef.off();
   if (reactionRef) reactionRef.off();
+  lastRoomSignature = "";
   salaRef = db.ref(`rooms/${code}`);
   salaRef.on("value", (snap: any) => {
     const room = snap.val() as Room | null;
@@ -436,7 +438,14 @@ function listenRoom(code: string) {
       showScreen("setup");
       return;
     }
-    GS = normalizeRoom(room);
+    const nextRoom = normalizeRoom(room);
+    const nextSignature = roomRenderSignature(nextRoom);
+    if (lastRoomSignature === nextSignature) {
+      GS = nextRoom;
+      return;
+    }
+    lastRoomSignature = nextSignature;
+    GS = nextRoom;
     ME.host = GS.hostId === ME.id;
     if (GS.status === "lobby") { renderLobby(); showScreen("lobby"); }
     else if (GS.status === "playing") { renderGame(); showScreen("game"); }
@@ -460,6 +469,29 @@ function normalizeRoom(room: Room): Room {
     usedQ: room.usedQ ?? [],
     eliminationOrder: room.eliminationOrder ?? []
   };
+}
+
+function roomRenderSignature(room: Room): string {
+  const players = sortedPlayers(room.players).map((p) => [
+    p.id,
+    p.nick,
+    p.skinIndex,
+    p.lives,
+    p.score,
+    p.online,
+    p.eliminatedAt ?? null
+  ]);
+  return JSON.stringify([
+    room.code,
+    room.status,
+    room.hostId,
+    room.currentTurn,
+    room.currentQIndex,
+    room.turnStartedAt,
+    room.roundCount,
+    room.winnerId ?? null,
+    players
+  ]);
 }
 
 function renderLobby() {
@@ -874,6 +906,7 @@ function cleanupRoom(updateRemote = true) {
   }
   salaRef = null;
   reactionRef = null;
+  lastRoomSignature = "";
   localMode = false;
   ME.salaId = "";
   ME.host = false;
