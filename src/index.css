@@ -388,6 +388,8 @@ button,input{font:inherit}
 }
 
 .game-short-link{display:none}
+
+.arena-floor-ring{display:none!important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#060010;

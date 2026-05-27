@@ -64,6 +64,7 @@ let timeoutLock = "";
 let localMode = false;
 let localRoom: Room | null = null;
 let lastTickSecond: number | null = null;
+let runtimePlayerId = uid();
 const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
 const REACTION_SPARKS = REACTION_EMOJIS;
 const DEFAULT_REACTION = REACTION_EMOJIS[0];
@@ -124,15 +125,12 @@ function loadNick(): string {
 }
 
 function getPlayerId(): string {
-  try {
-    const saved = sessionStorage.getItem("ob_player_id");
-    if (saved) return saved;
-    const id = uid();
-    sessionStorage.setItem("ob_player_id", id);
-    return id;
-  } catch {
-    return uid();
-  }
+  return runtimePlayerId;
+}
+
+function resetPlayerId() {
+  runtimePlayerId = uid();
+  ME.id = runtimePlayerId;
 }
 
 function toast(msg: string, col = "#00d97e", d = 2500) {
@@ -413,6 +411,7 @@ async function joinRoom(code: string) {
   if (!room) { toast("Sala nao encontrada.", "#ff3535"); return; }
   if (room.status !== "lobby") { toast("Essa sala ja esta em jogo.", "#ff3535"); return; }
   const players = Object.values(room.players ?? {}).filter((p) => p.online);
+  if (room.players?.[ME.id]?.online) resetPlayerId();
   if (!room.players?.[ME.id] && players.length >= MAX_PLAYERS) { toast("Sala cheia.", "#ff3535"); return; }
   ME.salaId = code;
   ME.host = room.hostId === ME.id;
@@ -563,7 +562,7 @@ function renderGame() {
     slot.dataset.playerId = p.id;
     
     slot.innerHTML = `
-      <div class="p-avatar">
+      <div class="p-avatar-wrap">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
         ${ANIMALS[p.skinIndex % ANIMALS.length]}
       </div>
@@ -630,9 +629,9 @@ function updateTimer() {
   timer.classList.toggle("danger", remaining <= 3);
   
   if (remaining <= 3 && remaining > 0) {
-    document.querySelectorAll(".p-avatar").forEach(av => av.classList.add("panic"));
+    document.querySelectorAll(".p-avatar-wrap").forEach(av => av.classList.add("panic"));
   } else {
-    document.querySelectorAll(".p-avatar").forEach(av => av.classList.remove("panic"));
+    document.querySelectorAll(".p-avatar-wrap").forEach(av => av.classList.remove("panic"));
   }
 
   if (remaining <= 5 && remaining > 0 && Math.floor(elapsed * 10) % 10 === 0) {
