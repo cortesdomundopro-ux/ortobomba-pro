@@ -829,35 +829,33 @@ function showReaction(playerId: string, emoji: string) {
   slot.appendChild(pop);
 
   const avatar = slot.querySelector<HTMLElement>(".p-avatar-wrap");
-  if (avatar && !prefersReducedMotion.matches) {
+  if (avatar) {
     avatar.classList.remove("reaction-hit");
     void avatar.offsetWidth;
     avatar.classList.add("reaction-hit");
     window.setTimeout(() => avatar.classList.remove("reaction-hit"), 460);
   }
 
-  if (!prefersReducedMotion.matches) {
-    const burst = document.createElement("div");
-    burst.className = "reaction-burst";
-    burst.setAttribute("aria-hidden", "true");
-    const sparkCount = 10;
-    for (let i = 0; i < sparkCount; i++) {
-      const spark = document.createElement("span");
-      spark.className = "reaction-spark";
-      spark.textContent = REACTION_SPARKS[i % REACTION_SPARKS.length];
-      const angle = -112 + (224 / (sparkCount - 1)) * i;
-      const dist = 34 + (i % 3) * 12;
-      const tx = Math.cos((angle * Math.PI) / 180) * dist;
-      const ty = Math.sin((angle * Math.PI) / 180) * dist - 16;
-      spark.style.setProperty("--tx", `${tx.toFixed(1)}px`);
-      spark.style.setProperty("--ty", `${ty.toFixed(1)}px`);
-      spark.style.setProperty("--rot", `${Math.round(angle * 1.6)}deg`);
-      spark.style.setProperty("--del", `${(i % 4) * 0.035}s`);
-      burst.appendChild(spark);
-    }
-    slot.appendChild(burst);
-    window.setTimeout(() => burst.remove(), 1250);
+  const burst = document.createElement("div");
+  burst.className = "reaction-burst";
+  burst.setAttribute("aria-hidden", "true");
+  const sparkCount = 10;
+  for (let i = 0; i < sparkCount; i++) {
+    const spark = document.createElement("span");
+    spark.className = "reaction-spark";
+    spark.textContent = REACTION_SPARKS[i % REACTION_SPARKS.length];
+    const angle = -112 + (224 / (sparkCount - 1)) * i;
+    const dist = 34 + (i % 3) * 12;
+    const tx = Math.cos((angle * Math.PI) / 180) * dist;
+    const ty = Math.sin((angle * Math.PI) / 180) * dist - 16;
+    spark.style.setProperty("--tx", `${tx.toFixed(1)}px`);
+    spark.style.setProperty("--ty", `${ty.toFixed(1)}px`);
+    spark.style.setProperty("--rot", `${Math.round(angle * 1.6)}deg`);
+    spark.style.setProperty("--del", `${(i % 4) * 0.035}s`);
+    burst.appendChild(spark);
   }
+  slot.appendChild(burst);
+  window.setTimeout(() => burst.remove(), 1250);
 
   setTimeout(() => pop.remove(), 2000);
 }

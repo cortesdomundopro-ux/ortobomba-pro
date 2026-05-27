@@ -452,15 +452,14 @@ button,input{font:inherit}
 }
 
 @media(prefers-reduced-motion:reduce){
-  #bomb-el.warning .bomb-svg-wrap,
-  #bomb-el.danger .bomb-svg-wrap,
-  #bomb-el.warning .bomb-glow-halo,
-  #bomb-el.danger .bomb-glow-halo,
-  #bomb-el.danger .bomb-fuse-spark,
-  .p-avatar-wrap.reaction-hit{
-    animation:none!important;
-  }
-  .reaction-spark{display:none!important}
+  #bomb-el.warning .bomb-svg-wrap{animation:bombWarningPulse .42s infinite alternate ease-in-out!important}
+  #bomb-el.warning .bomb-glow-halo{animation:bombWarningHalo .42s infinite alternate ease-in-out!important}
+  #bomb-el.danger .bomb-svg-wrap{animation:bombDangerPulse .16s infinite alternate ease-in-out!important}
+  #bomb-el.danger .bomb-glow-halo{animation:bombDangerHalo .18s infinite alternate ease-in-out!important}
+  #bomb-el.danger .bomb-fuse-spark{animation:fuseDanger .09s infinite alternate ease-in-out!important}
+  .p-avatar-wrap.reaction-hit{animation:reactionAvatarHit .46s ease both!important}
+  .reaction-pop{animation:reactionPop 2s ease-out forwards!important}
+  .reaction-spark{display:block!important;animation:reactionSpark 1.05s var(--del,0s) ease-out forwards!important}
 }
 
 .arena-floor-ring{display:none!important}
