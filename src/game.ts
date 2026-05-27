@@ -323,6 +323,7 @@ function showScreen(id: "setup" | "lobby" | "game" | "admin") {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   el<HTMLDivElement>("scr-" + id).classList.add("active");
   el<HTMLDivElement>("emoji-menu").style.display = id === "game" ? "flex" : "none";
+  if (id === "game") bindReactionButtons();
   setParticlesActive(id === "setup");
   if (AC && AC.state === "suspended") void AC.resume();
   if (id !== "game") stopTimer();
@@ -960,11 +961,19 @@ function startLocalDemo() {
 
 function reactFromButton(btn: HTMLElement, ev: Event) {
   ev.preventDefault();
-  ev.stopPropagation();
   const last = Number(btn.dataset.lastReactionAt || 0);
   if (now() - last < 350) return;
   btn.dataset.lastReactionAt = String(now());
   void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+}
+
+function bindReactionButtons() {
+  document.querySelectorAll<HTMLElement>(".emoji-btn").forEach((btn) => {
+    const react = (ev: Event) => reactFromButton(btn, ev);
+    btn.onpointerdown = react;
+    btn.onclick = react;
+    btn.ontouchend = react;
+  });
 }
 
 function bindReactionEvents() {
@@ -979,6 +988,7 @@ function bindReactionEvents() {
   document.addEventListener("pointerdown", react, true);
   document.addEventListener("click", react, true);
   document.addEventListener("touchend", react, { capture: true, passive: false });
+  bindReactionButtons();
 }
 
 function bindEvents() {
