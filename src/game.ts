@@ -543,10 +543,12 @@ function renderGame() {
   const isMobile = window.innerWidth < 600;
   const radius = isMobile ? 110 : 180;
   const arrow = el<HTMLDivElement>("turn-arrow");
+  const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
   
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
   arrow.style.display = "none";
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
+  el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
   players.forEach((p, i) => {
     const angle = (360 / count) * i - 90;
@@ -577,7 +579,7 @@ function renderGame() {
     }
   });
 
-  if (GS.currentTurn === ME.id && GS.status === "playing") {
+  if (isMyTurn) {
     renderQuestion();
   } else {
     el<HTMLDivElement>("q-card").style.display = "none";
@@ -899,7 +901,16 @@ function bindEvents() {
     toast("Salas limpas.");
   };
   document.querySelectorAll<HTMLElement>(".emoji-btn").forEach((btn) => {
-    btn.onclick = () => void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+    const react = (ev: Event) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const last = Number(btn.dataset.lastReactionAt || 0);
+      if (now() - last < 350) return;
+      btn.dataset.lastReactionAt = String(now());
+      void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+    };
+    btn.addEventListener("pointerdown", react);
+    btn.addEventListener("click", react);
   });
 }
 

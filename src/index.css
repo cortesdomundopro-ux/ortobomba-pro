@@ -390,6 +390,38 @@ button,input{font:inherit}
 .game-short-link{display:none}
 
 .arena-floor-ring{display:none!important}
+
+@media(max-width:600px){
+  #scr-game.active.no-question{
+    justify-content:center!important;
+    overflow:hidden;
+    padding-top:54px;
+    padding-bottom:92px;
+  }
+  #scr-game.active.no-question .arena-wrap{
+    justify-content:center;
+    min-height:calc(100dvh - 160px);
+  }
+  #scr-game.active.no-question .circle-wrapper{
+    margin:0 auto;
+  }
+  #scr-game.active:not(.no-question){
+    padding-top:54px;
+    padding-bottom:108px;
+  }
+  #scr-game.active:not(.no-question) .circle-wrapper{
+    margin-top:0;
+  }
+  .emoji-menu{
+    bottom:calc(12px + env(safe-area-inset-bottom));
+    touch-action:manipulation;
+  }
+  .emoji-btn{
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#060010;
