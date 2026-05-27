@@ -64,8 +64,8 @@ let timeoutLock = "";
 let localMode = false;
 let localRoom: Room | null = null;
 let lastTickSecond: number | null = null;
-const REACTION_EMOJIS = ["😂", "🤡", "🔥", "💀", "😈", "💣", "🥶", "👑"];
-const REACTION_SPARKS = ["😂", "🔥", "💥", "✨", "💣", "😈", "🤯", "🥶"];
+const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
+const REACTION_SPARKS = REACTION_EMOJIS;
 const DEFAULT_REACTION = REACTION_EMOJIS[0];
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
@@ -562,11 +562,11 @@ function renderGame() {
     
     slot.innerHTML = `
       <div class="p-avatar">
-        ${isHost ? '<div class="p-crown">👑</div>' : ''}
+        ${isHost ? '<div class="p-crown">HOST</div>' : ''}
         ${ANIMALS[p.skinIndex % ANIMALS.length]}
       </div>
       <div class="p-name">${esc(p.nick)}</div>
-      <div class="p-lives">${"❤️".repeat(p.lives)}</div>
+      <div class="p-lives">${"&hearts;".repeat(p.lives)}</div>
     `;
     circle.appendChild(slot);
     
@@ -591,12 +591,12 @@ function renderQuestion() {
   card.style.display = "block";
   el<HTMLDivElement>("q-cat").textContent = q.cat.toUpperCase();
   
-  const wordDisplay = q.w.replace(/__/g, ' <span class="q-blank-pro">__</span> ').replace(/_/g, ' <span class="q-blank-pro">_</span> ');
+  const wordDisplay = q.word.replace(/__/g, ' <span class="q-blank-pro">__</span> ').replace(/_/g, ' <span class="q-blank-pro">_</span> ');
   el<HTMLDivElement>("q-word").innerHTML = wordDisplay;
 
   const ops = el<HTMLDivElement>("opcoes");
   ops.innerHTML = "";
-  q.ops.forEach((o) => {
+  q.options.forEach((o) => {
     const btn = document.createElement("button");
     btn.className = "btn";
     btn.textContent = o;
@@ -659,7 +659,7 @@ async function handleTimeout() {
 }
 
 async function submitAnswer(ans: string) {
-  const isCorrect = ans.toLowerCase() === GS.currentQ?.r.toLowerCase();
+  const isCorrect = ans.toLowerCase() === GS.currentQ?.answer.toLowerCase();
   if (isCorrect) playCorrect();
   else playBoom();
 
@@ -845,6 +845,9 @@ function bindEvents() {
   el<HTMLButtonElement>("btn-admin").onclick = () => void adminPanel();
   el<HTMLButtonElement>("btn-jogar-novamente").onclick = () => void jogarNovamente();
   el<HTMLButtonElement>("btn-copiar").onclick = () => void copiarCodigo();
+  document.querySelectorAll<HTMLElement>(".emoji-btn").forEach((btn) => {
+    btn.onclick = () => void sendReaction(btn.dataset.emoji ?? DEFAULT_REACTION);
+  });
 }
 
 window.addEventListener("DOMContentLoaded", () => {
