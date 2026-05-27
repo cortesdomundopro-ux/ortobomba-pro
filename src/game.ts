@@ -702,20 +702,17 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   );
   activeBombPass = passAnimation;
 
-  passAnimation.onfinish = () => {
-    if (activeBombPass !== passAnimation) return;
-    bomb.style.transition = "";
-    bomb.style.transform = targetTransform;
-    passAnimation.cancel();
-    activeBombPass = null;
-  };
-
-  window.setTimeout(() => {
-    if (activeBombPass !== passAnimation) return;
+  const finishPass = () => {
+    if (activeBombPass && activeBombPass !== passAnimation) return;
     bomb.classList.remove("bomb-throwing", "pass-pop");
     bomb.style.transition = "";
     bomb.style.transform = targetTransform;
-  }, BOMB_PASS_MS + 90);
+    if (activeBombPass === passAnimation) passAnimation.cancel();
+    activeBombPass = null;
+  };
+
+  passAnimation.onfinish = finishPass;
+  window.setTimeout(finishPass, BOMB_PASS_MS + 90);
 }
 
 function renderGame() {
