@@ -12,7 +12,7 @@ const FIREBASE_CONFIG = {
 };
 
 const ADMIN_CODE: string =
-  (import.meta as unknown as { env: Record<string, string | undefined> }).env
+  (import.meta as unknown as { env: Record<string, string | undefined> } ).env
     .VITE_ADMIN_CODE ?? "OB_ADMIN";
 const TURN_DURATION = 10;
 const MAX_PLAYERS = 6;
@@ -591,7 +591,6 @@ function renderQuestion() {
   card.style.display = "block";
   el<HTMLDivElement>("q-cat").textContent = q.cat.toUpperCase();
   
-  // CORREÇÃO: Usando nomes de propriedades baseados nos erros do TS (w, ops, r)
   const wordDisplay = q.w.replace(/__/g, ' <span class="q-blank-pro">__</span> ').replace(/_/g, ' <span class="q-blank-pro">_</span> ');
   el<HTMLDivElement>("q-word").innerHTML = wordDisplay;
 
