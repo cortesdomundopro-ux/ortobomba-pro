@@ -6,3 +6,12 @@ export const ANIMALS = [
   `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="49" fill="#392110"/><circle cx="25" cy="39" r="16" fill="#a45c25"/><circle cx="75" cy="39" r="16" fill="#a45c25"/><circle cx="50" cy="56" r="33" fill="#b96a29"/><ellipse cx="50" cy="64" rx="20" ry="16" fill="#ffd28a"/><circle cx="38" cy="49" r="8" fill="#fff"/><circle cx="62" cy="49" r="8" fill="#fff"/><circle cx="40" cy="50" r="3.5" fill="#111"/><circle cx="60" cy="50" r="3.5" fill="#111"/><path d="M40 70 Q50 79 60 70" fill="none" stroke="#5b2b13" stroke-width="4" stroke-linecap="round"/></svg>`,
   `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="49" fill="#10182a"/><circle cx="27" cy="34" r="16" fill="#111"/><circle cx="73" cy="34" r="16" fill="#111"/><circle cx="50" cy="55" r="34" fill="#fff"/><ellipse cx="37" cy="49" rx="11" ry="13" fill="#171717"/><ellipse cx="63" cy="49" rx="11" ry="13" fill="#171717"/><circle cx="39" cy="48" r="4" fill="#8ee8ff"/><circle cx="61" cy="48" r="4" fill="#8ee8ff"/><ellipse cx="50" cy="62" rx="7" ry="5" fill="#111"/><path d="M39 73 Q50 82 62 73" fill="none" stroke="#111" stroke-width="4" stroke-linecap="round"/></svg>`
 ];
+
+export const AVATAR_IMAGES = [
+  "/avatars/avatar-0.png",
+  "/avatars/avatar-1.png",
+  "/avatars/avatar-2.png",
+  "/avatars/avatar-3.png",
+  "/avatars/avatar-4.png",
+  "/avatars/avatar-5.png"
+];

@@ -1,4 +1,4 @@
-import { ANIMALS } from "./animals";
+import { ANIMALS, AVATAR_IMAGES } from "./animals";
 import { Q, type Question } from "./questions";
 
 const FIREBASE_CONFIG = {
@@ -106,6 +106,18 @@ function esc(v: unknown): string {
 
 function attrEsc(v: string): string {
   return v.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function skinIndexOf(skinIndex: number): number {
+  return ((skinIndex % ANIMALS.length) + ANIMALS.length) % ANIMALS.length;
+}
+
+function avatarHtml(skinIndex: number): string {
+  const idx = skinIndexOf(skinIndex);
+  const src = AVATAR_IMAGES[idx];
+  const fallback = `<span class="avatar-fallback">${ANIMALS[idx]}</span>`;
+  if (!src) return fallback;
+  return `${fallback}<img class="avatar-art" src="${esc(src)}" alt="" draggable="false" loading="eager" onload="this.previousElementSibling.style.display='none'" onerror="this.style.display='none';this.previousElementSibling.style.display='block'">`;
 }
 
 function normalizeReactionEmoji(raw: string): string {
@@ -553,7 +565,7 @@ function renderLobby() {
   const players = sortedPlayers(GS.players);
   list.innerHTML = players.map((p) => `
     <div class="player-row">
-      <div class="mini-avatar">${ANIMALS[p.skinIndex % ANIMALS.length]}</div>
+      <div class="mini-avatar">${avatarHtml(p.skinIndex)}</div>
       <strong>${esc(p.nick)}</strong>
       ${p.id === GS.hostId ? `<span class="host-badge">HOST</span>` : ""}
     </div>
@@ -662,7 +674,7 @@ function renderGame() {
     slot.innerHTML = `
       <div class="p-avatar-wrap">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
-        ${ANIMALS[p.skinIndex % ANIMALS.length]}
+        ${avatarHtml(p.skinIndex)}
       </div>
       <div class="p-name">${esc(p.nick)}</div>
       <div class="p-lives">${"&hearts;".repeat(p.lives)}</div>

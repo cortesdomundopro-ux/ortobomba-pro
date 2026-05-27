@@ -1050,3 +1050,61 @@ button,input{font:inherit}
     inset:4.5%;
   }
 }
+
+.mini-avatar,
+.p-avatar-wrap{
+  position:relative;
+}
+.avatar-fallback{
+  position:absolute;
+  inset:0;
+  display:block;
+  border-radius:50%;
+  overflow:hidden;
+}
+.avatar-fallback svg{
+  width:100%;
+  height:100%;
+  display:block;
+  border-radius:50%;
+}
+.mini-avatar .avatar-art,
+.p-avatar-wrap .avatar-art{
+  position:absolute;
+  left:50%;
+  top:50%;
+  display:block!important;
+  max-width:none;
+  border-radius:0!important;
+  object-fit:contain;
+  pointer-events:none;
+  user-select:none;
+  transform:translate(-50%,-50%);
+  z-index:2;
+}
+.mini-avatar .avatar-art{
+  width:142%!important;
+  height:142%!important;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.28));
+}
+.p-avatar-wrap .avatar-art{
+  width:138%!important;
+  height:138%!important;
+  filter:drop-shadow(0 5px 9px rgba(0,0,0,.42));
+}
+.p-avatar-wrap.panic .avatar-art,
+.p-avatar-wrap.reaction-hit .avatar-art{
+  transform-origin:center;
+}
+
+@media(min-width:601px){
+  .p-avatar-wrap.panic .avatar-art{
+    animation:avatarInnerPanic .08s infinite alternate ease-in-out!important;
+  }
+  .active-turn .p-avatar-wrap.panic .avatar-art{
+    animation:avatarInnerPanicActive .07s infinite alternate ease-in-out!important;
+  }
+  .p-avatar-wrap.reaction-hit .avatar-art{
+    animation:avatarInnerReaction .46s ease both!important;
+  }
+}
