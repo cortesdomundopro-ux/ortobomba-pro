@@ -16,6 +16,7 @@ const ADMIN_CODE: string =
     .VITE_ADMIN_CODE ?? "OB_ADMIN";
 const TURN_DURATION = 10;
 const MAX_PLAYERS = 6;
+const PLAYER_STALE_MS = 35_000;
 
 declare const firebase: any;
 
@@ -27,6 +28,7 @@ type Player = {
   score: number;
   online: boolean;
   joinedAt: number;
+  seenAt?: number;
   eliminatedAt?: number | null;
 };
 
@@ -54,6 +56,7 @@ let reactionRef: any = null;
 const sentReactionIds = new Set<string>();
 let adminRef: any = null;
 let bombTimerInterval: ReturnType<typeof setInterval> | null = null;
+let presenceInterval: ReturnType<typeof setInterval> | null = null;
 let particlesActive = true;
 let muted = false;
 let AC: AudioContext | null = null;
@@ -345,6 +348,7 @@ function getNickOrToast(): string | null {
 }
 
 function makePlayer(nick: string, skinIndex?: number): Player {
+  const stamp = now();
   return {
     id: ME.id,
     nick,
@@ -352,9 +356,26 @@ function makePlayer(nick: string, skinIndex?: number): Player {
     lives: 3,
     score: 0,
     online: true,
-    joinedAt: now(),
+    joinedAt: stamp,
+    seenAt: stamp,
     eliminatedAt: null
   };
+}
+
+function isFreshPlayer(p?: Player | null): p is Player {
+  if (!p || !p.online) return false;
+  const seen = Number(p.seenAt || 0);
+  if (!seen) return now() - Number(p.joinedAt || 0) <= PLAYER_STALE_MS;
+  return now() - seen <= PLAYER_STALE_MS;
+}
+
+function nextSkinIndex(players: Player[], preferred = players.length): number {
+  const used = new Set(players.map((p) => ((p.skinIndex % ANIMALS.length) + ANIMALS.length) % ANIMALS.length));
+  for (let i = 0; i < ANIMALS.length; i++) {
+    const idx = (preferred + i) % ANIMALS.length;
+    if (!used.has(idx)) return idx;
+  }
+  return preferred % ANIMALS.length;
 }
 
 function roomCode(): string {
@@ -371,7 +392,8 @@ async function partidaRapida() {
   const rooms = (snap.val() ?? {}) as Record<string, Room>;
   const open = Object.values(rooms).find((r) => {
     const players = Object.values(r.players ?? {}).filter((p) => p.online);
-    return r.status === "lobby" && players.length < MAX_PLAYERS;
+    const host = r.players?.[r.hostId];
+    return r.status === "lobby" && players.length < MAX_PLAYERS && isFreshPlayer(host);
   });
   if (open) await joinRoom(open.code);
   else await criarSala(true);
@@ -414,20 +436,49 @@ async function joinRoom(code: string) {
   if (!room) { toast("Sala nao encontrada.", "#ff3535"); return; }
   if (room.status !== "lobby") { toast("Essa sala ja esta em jogo.", "#ff3535"); return; }
   const players = Object.values(room.players ?? {}).filter((p) => p.online);
-  if (room.players?.[ME.id]?.online) resetPlayerId();
-  if (!room.players?.[ME.id] && players.length >= MAX_PLAYERS) { toast("Sala cheia.", "#ff3535"); return; }
+  const existingPlayer = room.players?.[ME.id];
+  if (existingPlayer?.online) {
+    ME.skinIndex = existingPlayer.skinIndex;
+  } else {
+    if (players.length >= MAX_PLAYERS) { toast("Sala cheia.", "#ff3535"); return; }
+    ME.skinIndex = nextSkinIndex(players);
+  }
   ME.salaId = code;
   ME.host = room.hostId === ME.id;
-  ME.skinIndex = players.length % ANIMALS.length;
-  await ref.child(`players/${ME.id}`).set(makePlayer(nick, ME.skinIndex));
+  await ref.child(`players/${ME.id}`).update({
+    ...makePlayer(nick, ME.skinIndex),
+    joinedAt: existingPlayer?.joinedAt ?? now()
+  });
   await ref.child("updatedAt").set(now());
   listenRoom(code);
   showScreen("lobby");
 }
 
+function touchPresence() {
+  if (!salaRef || !ME.id) return;
+  void salaRef.child(`players/${ME.id}`).update({ online: true, seenAt: now() });
+}
+
+function startPresence() {
+  if (presenceInterval) clearInterval(presenceInterval);
+  touchPresence();
+  presenceInterval = window.setInterval(touchPresence, 8_000);
+}
+
+function recoverLobbyHost(room: Room) {
+  if (!salaRef || room.status !== "lobby") return;
+  const players = sortedPlayers(room.players);
+  if (!players.length) return;
+  if (isFreshPlayer(room.players?.[room.hostId])) return;
+  const nextHost = players.find((p) => p.id === ME.id || isFreshPlayer(p)) ?? players[0];
+  if (!nextHost || nextHost.id === room.hostId) return;
+  void salaRef.update({ hostId: nextHost.id, updatedAt: now() });
+}
+
 function listenRoom(code: string) {
   if (salaRef) salaRef.off();
   if (reactionRef) reactionRef.off();
+  if (presenceInterval) clearInterval(presenceInterval);
   lastRoomSignature = "";
   salaRef = db.ref(`rooms/${code}`);
   salaRef.on("value", (snap: any) => {
@@ -439,6 +490,7 @@ function listenRoom(code: string) {
       return;
     }
     const nextRoom = normalizeRoom(room);
+    recoverLobbyHost(nextRoom);
     const nextSignature = roomRenderSignature(nextRoom);
     if (lastRoomSignature === nextSignature) {
       GS = nextRoom;
@@ -452,6 +504,7 @@ function listenRoom(code: string) {
     else { renderGame(); renderWin(); }
   });
   salaRef.child(`players/${ME.id}`).onDisconnect().update({ online: false });
+  startPresence();
   reactionRef = salaRef.child("reactions");
   reactionRef.limitToLast(1).on("child_added", (snap: any) => {
     const r = snap.val();
@@ -905,6 +958,10 @@ async function copiarCodigo() {
 
 function cleanupRoom(updateRemote = true) {
   stopTimer();
+  if (presenceInterval) {
+    clearInterval(presenceInterval);
+    presenceInterval = null;
+  }
   if (salaRef) {
     salaRef.off();
     if (updateRemote && ME.id) salaRef.child(`players/${ME.id}`).update({ online: false });
@@ -938,7 +995,7 @@ async function sairSala() {
     if (wasHost) {
       const snap = await ref.once("value");
       const room = normalizeRoom(snap.val() ?? emptyRoom(roomCode));
-      const remaining = sortedPlayers(room.players).filter((p) => p.id !== ME.id);
+      const remaining = sortedPlayers(room.players).filter((p) => p.id !== ME.id && isFreshPlayer(p));
       if (!remaining.length) {
         await ref.remove();
         return;
