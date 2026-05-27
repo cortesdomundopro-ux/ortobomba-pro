@@ -1099,12 +1099,230 @@ button,input{font:inherit}
 
 @media(min-width:601px){
   .p-avatar-wrap.panic .avatar-art{
-    animation:avatarInnerPanic .08s infinite alternate ease-in-out!important;
+    animation:avatarArtPanic .08s infinite alternate ease-in-out!important;
   }
   .active-turn .p-avatar-wrap.panic .avatar-art{
-    animation:avatarInnerPanicActive .07s infinite alternate ease-in-out!important;
+    animation:avatarArtPanicActive .07s infinite alternate ease-in-out!important;
   }
   .p-avatar-wrap.reaction-hit .avatar-art{
-    animation:avatarInnerReaction .46s ease both!important;
+    animation:avatarArtReaction .46s ease both!important;
+  }
+}
+
+.throw-arm{
+  position:absolute;
+  left:50%;
+  top:54%;
+  width:42px;
+  height:13px;
+  border:1px solid rgba(255,255,255,.34);
+  border-radius:999px;
+  background:linear-gradient(90deg,#d38772 0%,#ffc4aa 54%,#ffddca 100%);
+  box-shadow:0 4px 9px rgba(0,0,0,.34),inset -5px 0 8px rgba(130,54,44,.2);
+  opacity:.72;
+  pointer-events:none;
+  transform-origin:7px 50%;
+  z-index:1;
+}
+.throw-arm::after{
+  content:'';
+  position:absolute;
+  right:-7px;
+  top:50%;
+  width:16px;
+  height:17px;
+  border:1px solid rgba(255,255,255,.36);
+  border-radius:50% 50% 46% 46%;
+  background:radial-gradient(circle at 38% 28%,#ffe4d4 0 28%,#ffc0a3 61%,#d98b72 100%);
+  box-shadow:inset -3px -2px 5px rgba(132,58,48,.18);
+  transform:translateY(-50%);
+}
+.throw-arm-a{
+  transform:rotate(var(--aim-angle,0deg)) translateX(23px) translateY(-9px) rotate(-9deg);
+}
+.throw-arm-b{
+  width:34px;
+  opacity:.56;
+  transform:rotate(var(--aim-angle,0deg)) translateX(18px) translateY(10px) rotate(11deg);
+}
+.active-turn .throw-arm{
+  width:52px;
+  opacity:.96;
+  animation:throwArmPulse .58s ease-in-out infinite alternate;
+}
+.active-turn .throw-arm-b{
+  width:43px;
+}
+.p-avatar-wrap.panic .throw-arm{
+  animation:throwArmShake .1s infinite alternate ease-in-out;
+}
+.active-turn .p-avatar-wrap.panic .throw-arm{
+  animation:throwArmPulse .58s ease-in-out infinite alternate,throwArmShake .1s infinite alternate ease-in-out;
+}
+
+@keyframes avatarArtPanic{
+  from{transform:translate(-50%,-50%) translate(-3px,1px) rotate(-9deg) scale(1.04);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1.1)}
+  to{transform:translate(-50%,-50%) translate(3px,-1px) rotate(9deg) scale(1.04);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1.35) brightness(1.08)}
+}
+@keyframes avatarArtPanicActive{
+  from{transform:translate(-50%,-50%) translate(-4px,1px) rotate(-11deg) scale(1.08);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1.2) brightness(1.08)}
+  to{transform:translate(-50%,-50%) translate(4px,-1px) rotate(11deg) scale(1.08);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1.45) brightness(1.14)}
+}
+@keyframes avatarArtReaction{
+  0%{transform:translate(-50%,-50%) scale(1) rotate(0);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1)}
+  45%{transform:translate(-50%,-50%) scale(1.14) rotate(-8deg);filter:drop-shadow(0 5px 11px rgba(0,0,0,.46)) saturate(1.55) brightness(1.2)}
+  100%{transform:translate(-50%,-50%) scale(1) rotate(0);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1)}
+}
+@keyframes throwArmPulse{
+  from{filter:brightness(1)}
+  to{filter:brightness(1.14) drop-shadow(0 0 5px rgba(255,199,0,.45))}
+}
+@keyframes throwArmShake{
+  from{margin-top:-1px}
+  to{margin-top:1px}
+}
+
+@media(max-width:600px){
+  .throw-arm{
+    width:32px;
+    height:10px;
+  }
+  .throw-arm::after{
+    right:-6px;
+    width:13px;
+    height:14px;
+  }
+  .throw-arm-a{
+    transform:rotate(var(--aim-angle,0deg)) translateX(18px) translateY(-7px) rotate(-9deg);
+  }
+  .throw-arm-b{
+    width:27px;
+    transform:rotate(var(--aim-angle,0deg)) translateX(14px) translateY(8px) rotate(11deg);
+  }
+  .active-turn .throw-arm{
+    width:39px;
+  }
+  .active-turn .throw-arm-b{
+    width:33px;
+  }
+}
+
+.hold-hands{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:96px;
+  height:88px;
+  background:url('/arms/hold-hands.png') center/contain no-repeat;
+  opacity:0;
+  pointer-events:none;
+  transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-36px) scale(.62);
+  transform-origin:50% 72%;
+  filter:drop-shadow(0 7px 10px rgba(0,0,0,.34));
+  z-index:4;
+}
+.active-turn .hold-hands{
+  opacity:.97;
+  animation:handsHold 1.05s ease-in-out infinite alternate;
+}
+.throwing-from .hold-hands{
+  opacity:.96;
+  animation:handsThrowRelease var(--throw-time,760ms) cubic-bezier(.16,.92,.18,1) both;
+}
+.catching-to .hold-hands{
+  opacity:.98;
+  animation:handsCatch var(--throw-time,760ms) cubic-bezier(.16,.92,.18,1) both;
+}
+.throwing-from .throw-arm,
+.catching-to .throw-arm{
+  opacity:.95;
+}
+
+#bomb-el{
+  will-change:transform;
+}
+#bomb-el.bomb-throwing{
+  filter:drop-shadow(0 0 12px rgba(255,0,122,.58)) drop-shadow(0 0 20px rgba(255,199,0,.3));
+}
+#bomb-el.bomb-throwing::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:46%;
+  width:var(--throw-distance,140px);
+  height:14px;
+  border-radius:999px;
+  background:linear-gradient(90deg,rgba(255,199,0,0),rgba(255,199,0,.72) 32%,rgba(255,0,122,.5) 68%,rgba(255,0,122,0));
+  box-shadow:0 0 18px rgba(255,0,122,.42),0 0 26px rgba(255,199,0,.22);
+  opacity:0;
+  pointer-events:none;
+  transform:rotate(var(--throw-angle,0deg)) translateX(calc(-1 * var(--throw-distance,140px))) scaleX(.82);
+  transform-origin:right center;
+  z-index:0;
+  animation:bombThrowTrail var(--throw-time,760ms) ease-out both;
+}
+#bomb-el.bomb-throwing .bomb-svg-wrap,
+#bomb-el.bomb-throwing .led-box{
+  position:relative;
+  z-index:2;
+  animation:bombThrowArc var(--throw-time,760ms) cubic-bezier(.16,.92,.18,1) both!important;
+}
+#bomb-el.bomb-throwing .bomb-glow-halo{
+  z-index:1;
+}
+#bomb-el.bomb-throwing .bomb-fuse-spark{
+  animation:fuseDanger .07s infinite alternate ease-in-out!important;
+}
+
+@keyframes handsHold{
+  from{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-32px) scale(.58)}
+  to{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-39px) scale(.64)}
+}
+@keyframes handsThrowRelease{
+  0%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-34px) scale(.62)}
+  35%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-47px) scale(.72)}
+  78%{opacity:.72;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-24px) scale(.52)}
+  100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-18px) scale(.44)}
+}
+@keyframes handsCatch{
+  0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-16px) scale(.43)}
+  52%{opacity:.92;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-45px) scale(.72)}
+  100%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-36px) scale(.62)}
+}
+@keyframes bombThrowArc{
+  0%{transform:translateY(0) rotate(-12deg) scale(.92)}
+  45%{transform:translateY(calc(var(--throw-arc,54px) * -1)) rotate(210deg) scale(1.13)}
+  100%{transform:translateY(0) rotate(380deg) scale(1)}
+}
+@keyframes bombThrowTrail{
+  0%{opacity:0;filter:blur(3px);transform:rotate(var(--throw-angle,0deg)) translateX(calc(-1 * var(--throw-distance,140px))) scaleX(.25)}
+  18%{opacity:.72;filter:blur(1.5px);transform:rotate(var(--throw-angle,0deg)) translateX(calc(-.95 * var(--throw-distance,140px))) scaleX(.72)}
+  72%{opacity:.46}
+  100%{opacity:0;filter:blur(5px);transform:rotate(var(--throw-angle,0deg)) translateX(calc(-.38 * var(--throw-distance,140px))) scaleX(.12)}
+}
+
+@media(max-width:600px){
+  .hold-hands{
+    width:72px;
+    height:66px;
+    transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-27px) scale(.58);
+  }
+  @keyframes handsHold{
+    from{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-24px) scale(.54)}
+    to{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-30px) scale(.6)}
+  }
+  @keyframes handsThrowRelease{
+    0%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-26px) scale(.58)}
+    35%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-36px) scale(.67)}
+    78%{opacity:.72;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-18px) scale(.48)}
+    100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-14px) scale(.4)}
+  }
+  @keyframes handsCatch{
+    0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-12px) scale(.4)}
+    52%{opacity:.92;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-34px) scale(.67)}
+    100%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-27px) scale(.58)}
+  }
+  #bomb-el.bomb-throwing::before{
+    height:10px;
   }
 }

@@ -17,6 +17,7 @@ const ADMIN_CODE: string =
 const TURN_DURATION = 10;
 const MAX_PLAYERS = 6;
 const PLAYER_STALE_MS = 35_000;
+const BOMB_PASS_MS = 760;
 
 declare const firebase: any;
 
@@ -47,6 +48,11 @@ type Room = {
   eliminationOrder: string[];
   winnerId?: string | null;
   updatedAt?: number;
+};
+
+type BombPoint = {
+  x: number;
+  y: number;
 };
 
 let db: any = null;
@@ -635,6 +641,45 @@ function startRoomState(room: Room): Room {
   };
 }
 
+function bombTransform(point: BombPoint): string {
+  return `translate(calc(-50% + ${point.x.toFixed(1)}px), calc(-50% + ${point.y.toFixed(1)}px))`;
+}
+
+function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
+  const targetTransform = bombTransform(to);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const distance = Math.hypot(dx, dy);
+
+  if (prefersReducedMotion.matches || distance < 4) {
+    bomb.classList.remove("bomb-throwing", "pass-pop");
+    bomb.style.transition = "";
+    bomb.style.transform = targetTransform;
+    return;
+  }
+
+  bomb.style.setProperty("--throw-distance", `${distance.toFixed(1)}px`);
+  bomb.style.setProperty("--throw-angle", `${(Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1)}deg`);
+  bomb.style.setProperty("--throw-arc", `${Math.min(92, Math.max(36, distance * 0.24)).toFixed(1)}px`);
+  bomb.style.setProperty("--throw-time", `${BOMB_PASS_MS}ms`);
+
+  bomb.classList.remove("bomb-throwing", "pass-pop");
+  bomb.style.transition = "none";
+  bomb.style.transform = bombTransform(from);
+  void bomb.offsetWidth;
+
+  bomb.classList.add("bomb-throwing", "pass-pop");
+  window.requestAnimationFrame(() => {
+    bomb.style.transition = `transform ${BOMB_PASS_MS}ms cubic-bezier(.16,.92,.18,1)`;
+    bomb.style.transform = targetTransform;
+  });
+
+  window.setTimeout(() => {
+    bomb.classList.remove("bomb-throwing", "pass-pop");
+    bomb.style.transition = "";
+  }, BOMB_PASS_MS + 90);
+}
+
 function renderGame() {
   const circle = el<HTMLDivElement>("players-circle");
   const bomb = el<HTMLDivElement>("bomb-el");
@@ -651,10 +696,14 @@ function renderGame() {
     : (count >= 5 ? circleSize * 0.38 : circleSize * 0.34);
   const arrow = el<HTMLDivElement>("turn-arrow");
   const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
+  const previousTurnId = prevTurnId;
+  const turnChanged = previousTurnId !== GS.currentTurn;
+  const bombStep = isMobile ? 0.64 : 0.69;
+  const bombPoints = new Map<string, BombPoint>();
+  let targetBombPoint: BombPoint = { x: 0, y: 0 };
   
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
   arrow.style.display = "none";
-  bomb.style.transform = "translate(-50%, -50%)";
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
@@ -662,18 +711,29 @@ function renderGame() {
     const angle = (360 / count) * i - 90;
     const x = Math.cos((angle * Math.PI) / 180) * radius;
     const y = Math.sin((angle * Math.PI) / 180) * radius;
+    const aimAngle = Math.atan2(-y, -x) * 180 / Math.PI;
+    const bombPoint = { x: x * bombStep, y: y * bombStep };
     const isTurn = p.id === GS.currentTurn;
     const isEliminated = p.lives <= 0;
     const isHost = p.id === GS.hostId;
+    const isThrowingFrom = turnChanged && previousTurnId === p.id && !isTurn && !isEliminated;
+    const isCatchingTo = turnChanged && Boolean(previousTurnId) && isTurn && !isEliminated;
+
+    bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
-    slot.className = `p-slot ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""}`;
+    slot.className = `p-slot ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
     slot.style.transform = `translate(${x}px, ${y}px)`;
+    slot.style.setProperty("--aim-angle", `${aimAngle.toFixed(1)}deg`);
+    slot.style.setProperty("--hands-rotate", `${(aimAngle + 90).toFixed(1)}deg`);
     slot.dataset.playerId = p.id;
     
     slot.innerHTML = `
       <div class="p-avatar-wrap">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
+        <span class="throw-arm throw-arm-a" aria-hidden="true"></span>
+        <span class="throw-arm throw-arm-b" aria-hidden="true"></span>
+        <span class="hold-hands" aria-hidden="true"></span>
         ${avatarHtml(p.skinIndex)}
       </div>
       <div class="p-name">${esc(p.nick)}</div>
@@ -684,17 +744,22 @@ function renderGame() {
     if (isTurn) {
       arrow.style.display = "block";
       arrow.style.transform = `rotate(${angle + 90}deg)`;
-      const bombStep = isMobile ? 0.44 : 0.5;
-      bomb.style.transform = `translate(calc(-50% + ${x * bombStep}px), calc(-50% + ${y * bombStep}px))`;
+      targetBombPoint = bombPoint;
     }
   });
 
-  if (prevTurnId !== GS.currentTurn) {
+  if (turnChanged) {
+    const fromPoint = previousTurnId ? bombPoints.get(previousTurnId) : undefined;
+    if (previousTurnId && GS.currentTurn && fromPoint) {
+      animateBombPass(bomb, fromPoint, targetBombPoint);
+    } else {
+      bomb.classList.remove("bomb-throwing", "pass-pop");
+      bomb.style.transition = "";
+      bomb.style.transform = bombTransform(targetBombPoint);
+    }
     prevTurnId = GS.currentTurn;
-    bomb.classList.remove("pass-pop");
-    void bomb.offsetWidth;
-    bomb.classList.add("pass-pop");
-    window.setTimeout(() => bomb.classList.remove("pass-pop"), 480);
+  } else {
+    bomb.style.transform = bombTransform(targetBombPoint);
   }
 
   if (isMyTurn) {
