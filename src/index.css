@@ -928,3 +928,61 @@ button,input{font:inherit}
   }
   .reaction-spark{display:none!important}
 }
+
+@media(min-width:601px){
+  #bomb-el.warning .bomb-svg-wrap{
+    animation:bombWarningPulse .42s infinite alternate ease-in-out!important;
+  }
+  #bomb-el.warning .bomb-glow-halo{
+    display:block!important;
+    animation:bombWarningHalo .42s infinite alternate ease-in-out!important;
+  }
+  #bomb-el.danger .bomb-svg-wrap{
+    animation:bombDangerPulse .12s infinite alternate ease-in-out!important;
+  }
+  #bomb-el.danger .bomb-glow-halo{
+    display:block!important;
+    animation:bombDangerHalo .14s infinite alternate ease-in-out!important;
+  }
+  #bomb-el.danger .bomb-fuse-spark{
+    animation:fuseDanger .08s infinite alternate ease-in-out!important;
+  }
+  .p-avatar-wrap.panic svg,
+  .p-avatar-wrap.panic img{
+    transform-origin:center;
+    animation:avatarInnerPanic .08s infinite alternate ease-in-out!important;
+  }
+  .active-turn .p-avatar-wrap.panic svg,
+  .active-turn .p-avatar-wrap.panic img{
+    animation:avatarInnerPanicActive .07s infinite alternate ease-in-out!important;
+  }
+  .p-avatar-wrap.reaction-hit svg,
+  .p-avatar-wrap.reaction-hit img{
+    transform-origin:center;
+    animation:avatarInnerReaction .46s ease both!important;
+  }
+  .active-turn .p-avatar-wrap.reaction-hit{
+    box-shadow:0 0 0 5px rgba(255,199,0,.55),0 0 34px rgba(255,199,0,.95),0 0 70px rgba(255,0,122,.65),0 4px 20px rgba(0,0,0,.7)!important;
+  }
+  .reaction-pop{
+    animation:reactionPop 2s ease-out forwards!important;
+  }
+  .reaction-spark{
+    display:block!important;
+    animation:reactionSpark 1.05s var(--del,0s) ease-out forwards!important;
+  }
+}
+
+@keyframes avatarInnerPanic{
+  from{transform:translate(-3px,1px) rotate(-9deg) scale(1.04);filter:saturate(1.1)}
+  to{transform:translate(3px,-1px) rotate(9deg) scale(1.04);filter:saturate(1.35) brightness(1.08)}
+}
+@keyframes avatarInnerPanicActive{
+  from{transform:translate(-4px,1px) rotate(-11deg) scale(1.08);filter:saturate(1.2) brightness(1.08)}
+  to{transform:translate(4px,-1px) rotate(11deg) scale(1.08);filter:saturate(1.45) brightness(1.14)}
+}
+@keyframes avatarInnerReaction{
+  0%{transform:scale(1) rotate(0);filter:saturate(1)}
+  45%{transform:scale(1.2) rotate(-8deg);filter:saturate(1.55) brightness(1.2)}
+  100%{transform:scale(1) rotate(0);filter:saturate(1)}
+}
