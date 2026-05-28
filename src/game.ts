@@ -697,6 +697,62 @@ function handBombPoint(x: number, y: number, isMobile: boolean): BombPoint {
   };
 }
 
+type ArenaSlotPoint = {
+  x: number;
+  y: number;
+};
+
+const ARENA_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
+  1: [{ x: 0.5, y: 0.5 }],
+  2: [
+    { x: 0.5, y: 0.24 },
+    { x: 0.5, y: 0.73 }
+  ],
+  3: [
+    { x: 0.21, y: 0.29 },
+    { x: 0.79, y: 0.29 },
+    { x: 0.5, y: 0.73 }
+  ],
+  4: [
+    { x: 0.21, y: 0.29 },
+    { x: 0.79, y: 0.29 },
+    { x: 0.79, y: 0.73 },
+    { x: 0.21, y: 0.73 }
+  ],
+  5: [
+    { x: 0.21, y: 0.29 },
+    { x: 0.79, y: 0.29 },
+    { x: 0.91, y: 0.53 },
+    { x: 0.5, y: 0.75 },
+    { x: 0.09, y: 0.53 }
+  ],
+  6: [
+    { x: 0.21, y: 0.29 },
+    { x: 0.79, y: 0.29 },
+    { x: 0.91, y: 0.53 },
+    { x: 0.79, y: 0.73 },
+    { x: 0.21, y: 0.73 },
+    { x: 0.09, y: 0.53 }
+  ]
+};
+
+function arenaStageSize(isMobile: boolean): { width: number; height: number } {
+  const vw = Math.max(320, window.innerWidth || 320);
+  const vh = Math.max(520, window.innerHeight || 720);
+  const reservedHeight = isMobile ? 330 : 270;
+  const maxWidthByHeight = Math.max(isMobile ? 320 : 680, (vh - reservedHeight) * 1.5);
+  const maxWidthByViewport = vw * (isMobile ? 1.02 : 0.88);
+  const maxWidth = isMobile ? 440 : 1180;
+  const minWidth = isMobile ? Math.min(vw * 0.96, 380) : Math.min(vw * 0.78, 760);
+  const width = Math.round(Math.max(minWidth, Math.min(maxWidth, maxWidthByViewport, maxWidthByHeight)));
+  return { width, height: Math.round(width * 2 / 3) };
+}
+
+function arenaSlotLayout(count: number): ArenaSlotPoint[] {
+  const normalized = Math.max(1, Math.min(MAX_PLAYERS, count || 1));
+  return ARENA_SLOT_LAYOUTS[normalized] ?? ARENA_SLOT_LAYOUTS[MAX_PLAYERS];
+}
+
 function playerVisualState(
   player: Player,
   isTurn: boolean,
@@ -842,23 +898,20 @@ function renderGame() {
   const players = sortedPlayers(GS.players);
   const count = players.length;
   const isMobile = window.innerWidth < 600;
-  const circleSize = isMobile
-    ? Math.min(Math.max(window.innerWidth * 0.78, 260), 310)
-    : window.innerWidth >= 1024
-      ? 560
-      : 420;
-  const radius = isMobile
-    ? (count >= 5 ? circleSize * 0.385 : circleSize * 0.39)
-    : (count >= 5 ? circleSize * 0.38 : circleSize * 0.34);
+  const stage = arenaStageSize(isMobile);
+  circle.style.setProperty("--arena-stage-width", `${stage.width}px`);
+  circle.style.setProperty("--arena-stage-height", `${stage.height}px`);
   const arrow = el<HTMLDivElement>("turn-arrow");
   const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
   const previousTurnId = prevTurnId;
   const turnChanged = previousTurnId !== GS.currentTurn;
   const bombPoints = new Map<string, BombPoint>();
+  const slotLayout = arenaSlotLayout(count);
   const layout = players.map((p, i) => {
-    const angle = (360 / count) * i - 90;
-    const x = Math.cos((angle * Math.PI) / 180) * radius;
-    const y = Math.sin((angle * Math.PI) / 180) * radius;
+    const point = slotLayout[i % slotLayout.length];
+    const x = (point.x - 0.5) * stage.width;
+    const y = (point.y - 0.5) * stage.height;
+    const angle = Math.atan2(y, x) * 180 / Math.PI;
     return { p, angle, x, y };
   });
   const activeLayout = layout.find((item) => item.p.id === GS.currentTurn);
@@ -920,7 +973,7 @@ function renderGame() {
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
     slot.style.setProperty("--slot-hop-x", `${hopX.toFixed(1)}px`);
     slot.style.setProperty("--slot-hop-y", `${hopY.toFixed(1)}px`);
-    slot.style.transform = "translate(var(--slot-x), var(--slot-y))";
+    slot.style.transform = "translate(calc(-50% + var(--slot-x)), calc(-50% + var(--slot-y)))";
     slot.style.setProperty("--aim-angle", `${aimAngle.toFixed(1)}deg`);
     slot.style.setProperty("--hands-rotate", `${(aimAngle + 90).toFixed(1)}deg`);
     slot.style.setProperty("--look-x", `${lookX.toFixed(1)}deg`);
