@@ -1,11 +1,3 @@
-import {
-  ANIMALS,
-  AVATAR_IMAGES,
-  BODY_IMAGES,
-  CHARACTER_SPRITES,
-  type CharacterSpriteState,
-  type CharacterStateName
-} from "./animals";
 import { Q, type Question } from "./questions";
 
 const FIREBASE_CONFIG = {
@@ -22,25 +14,11 @@ const ADMIN_CODE: string =
   (import.meta as unknown as { env: Record<string, string | undefined> } ).env
     .VITE_ADMIN_CODE ?? "OB_ADMIN";
 const TURN_DURATION = 10;
-const MAX_PLAYERS = 6;
+const MAX_PLAYERS = 4;
 const PLAYER_STALE_MS = 35_000;
 const BOMB_PASS_MS = 940;
-const AVATAR_BODY_PALETTES = [
-  { shirt: "#7a35ff", shirt2: "#4c1ccf", pants: "#20304f", shoe: "#ff7a1c", skin: "#f4b18f" },
-  { shirt: "#ff6fae", shirt2: "#26c6da", pants: "#27324f", shoe: "#ff82a9", skin: "#a85f38" },
-  { shirt: "#ff8a18", shirt2: "#ffcf3f", pants: "#24304d", shoe: "#39d0ff", skin: "#c77334" },
-  { shirt: "#35d6b4", shirt2: "#ff73a8", pants: "#2b2f55", shoe: "#ffd23d", skin: "#d88a5a" },
-  { shirt: "#2fd56f", shirt2: "#ffe44f", pants: "#1f3762", shoe: "#ff7b2f", skin: "#b66b32" },
-  { shirt: "#f5f5ff", shirt2: "#111827", pants: "#303a54", shoe: "#70e0ff", skin: "#e5b28f" }
-];
-const BODY_IMAGE_FILTERS = [
-  "none",
-  "none",
-  "none",
-  "none",
-  "hue-rotate(148deg) saturate(1.18) brightness(1.04)",
-  "hue-rotate(34deg) saturate(1.22) brightness(1.05)"
-];
+const PLAYER_EMOJIS = ["\u{1F604}", "\u{1F60E}", "\u{1F916}", "\u{1F47B}"];
+const SLOT_COLORS = ["#00d9ff", "#ff4fb8", "#35f06b", "#ffc700"];
 
 declare const firebase: any;
 
@@ -78,7 +56,14 @@ type BombPoint = {
   y: number;
 };
 
-type PlayerVisualState = CharacterStateName;
+type PlayerVisualState =
+  | "idle"
+  | "holdingBomb"
+  | "catchingBomb"
+  | "throwingBomb"
+  | "hit"
+  | "victory"
+  | "defeat";
 
 let db: any = null;
 let ME = { nick: "", id: "", salaId: "", host: false, skinIndex: 0 };
@@ -95,7 +80,6 @@ let GS: Room = emptyRoom("");
 let prevTurnId: string | null = null;
 let activeBombPass: Animation | null = null;
 let winnerSaved = false;
-let timeoutLock = "";
 let localMode = false;
 let localRoom: Room | null = null;
 let lastTickSecond: number | null = null;
@@ -107,7 +91,6 @@ const REACTION_SPARKS = REACTION_EMOJIS;
 const DEFAULT_REACTION = REACTION_EMOJIS[0];
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const previousLives = new Map<string, number>();
-const SLOT_COLORS = ["#00d9ff", "#35f06b", "#ffc700", "#d946ff", "#00f5d4", "#ff2d74"];
 
 function emptyRoom(code: string): Room {
   return {
@@ -143,24 +126,12 @@ function attrEsc(v: string): string {
 }
 
 function skinIndexOf(skinIndex: number): number {
-  return ((skinIndex % ANIMALS.length) + ANIMALS.length) % ANIMALS.length;
+  return ((skinIndex % PLAYER_EMOJIS.length) + PLAYER_EMOJIS.length) % PLAYER_EMOJIS.length;
 }
 
 function avatarHtml(skinIndex: number): string {
   const idx = skinIndexOf(skinIndex);
-  const src = AVATAR_IMAGES[idx];
-  const fallback = `<span class="avatar-fallback">${ANIMALS[idx]}</span>`;
-  if (!src) return `<span class="avatar-head">${fallback}</span>`;
-  return `<span class="avatar-head">${fallback}<img class="avatar-art" src="${esc(src)}" alt="" draggable="false" loading="eager" onload="this.previousElementSibling.style.display='none'" onerror="this.style.display='none';this.previousElementSibling.style.display='block'"></span>`;
-}
-
-function bodyImageSrc(skinIndex: number): string {
-  return BODY_IMAGES[skinIndexOf(skinIndex)] ?? "";
-}
-
-function characterSpriteState(skinIndex: number, state: PlayerVisualState): CharacterSpriteState {
-  const spriteSet = CHARACTER_SPRITES[skinIndexOf(skinIndex)] ?? CHARACTER_SPRITES[0];
-  return spriteSet.states[state] ?? spriteSet.states.idle;
+  return `<span class="avatar-head emoji-avatar">${PLAYER_EMOJIS[idx]}</span>`;
 }
 
 function normalizeReactionEmoji(raw: string): string {
@@ -186,11 +157,6 @@ function loadNick(): string {
 
 function getPlayerId(): string {
   return runtimePlayerId;
-}
-
-function resetPlayerId() {
-  runtimePlayerId = uid();
-  ME.id = runtimePlayerId;
 }
 
 function toast(msg: string, col = "#00d97e", d = 2500) {
@@ -407,7 +373,7 @@ function makePlayer(nick: string, skinIndex?: number): Player {
   return {
     id: ME.id,
     nick,
-    skinIndex: skinIndex ?? Math.floor(Math.random() * ANIMALS.length),
+    skinIndex: skinIndex ?? Math.floor(Math.random() * PLAYER_EMOJIS.length),
     lives: 3,
     score: 0,
     online: true,
@@ -425,12 +391,12 @@ function isFreshPlayer(p?: Player | null): p is Player {
 }
 
 function nextSkinIndex(players: Player[], preferred = players.length): number {
-  const used = new Set(players.map((p) => ((p.skinIndex % ANIMALS.length) + ANIMALS.length) % ANIMALS.length));
-  for (let i = 0; i < ANIMALS.length; i++) {
-    const idx = (preferred + i) % ANIMALS.length;
+  const used = new Set(players.map((p) => ((p.skinIndex % PLAYER_EMOJIS.length) + PLAYER_EMOJIS.length) % PLAYER_EMOJIS.length));
+  for (let i = 0; i < PLAYER_EMOJIS.length; i++) {
+    const idx = (preferred + i) % PLAYER_EMOJIS.length;
     if (!used.has(idx)) return idx;
   }
-  return preferred % ANIMALS.length;
+  return preferred % PLAYER_EMOJIS.length;
 }
 
 function roomCode(): string {
@@ -461,7 +427,7 @@ async function criarSala(quick = false) {
   const code = quick ? `RAP${roomCode().slice(0, 3)}` : roomCode();
   ME.salaId = code;
   ME.host = true;
-  ME.skinIndex = Math.floor(Math.random() * ANIMALS.length);
+  ME.skinIndex = Math.floor(Math.random() * PLAYER_EMOJIS.length);
   const player = makePlayer(nick, ME.skinIndex);
   const room: Room = {
     ...emptyRoom(code),
@@ -679,7 +645,7 @@ function startRoomState(room: Room): Room {
 }
 
 function bombScale(): number {
-  return window.innerWidth < 600 ? 0.44 : 0.52;
+  return window.innerWidth < 600 ? 0.46 : 0.58;
 }
 
 function bombTransform(point: BombPoint, scale = bombScale()): string {
@@ -690,15 +656,11 @@ function handBombPoint(x: number, y: number, isMobile: boolean): BombPoint {
   const distance = Math.max(1, Math.hypot(x, y));
   const inwardX = -x / distance;
   const inwardY = -y / distance;
-  const tangentX = -inwardY;
-  const tangentY = inwardX;
-  const side = x >= 0 ? 1 : -1;
-  const inwardOffset = isMobile ? 18 : 26;
-  const sideOffset = isMobile ? 28 : 42;
-  const lowerOffset = isMobile ? 6 : 8;
+  const inwardOffset = isMobile ? 34 : 52;
+  const liftOffset = isMobile ? 8 : 10;
   return {
-    x: x + inwardX * inwardOffset + tangentX * side * sideOffset,
-    y: y + inwardY * inwardOffset + tangentY * side * sideOffset + lowerOffset
+    x: x + inwardX * inwardOffset,
+    y: y + inwardY * inwardOffset - liftOffset
   };
 }
 
@@ -778,13 +740,13 @@ const ARENA_MOBILE_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
 function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   const vw = Math.max(320, window.innerWidth || 320);
   const vh = Math.max(520, window.innerHeight || 720);
-  const reservedHeight = isMobile ? 320 : 235;
-  const maxWidthByHeight = Math.max(isMobile ? 330 : 760, (vh - reservedHeight) * 1.5);
-  const maxWidthByViewport = vw * (isMobile ? 1.04 : 0.94);
-  const maxWidth = isMobile ? 460 : 1260;
-  const minWidth = isMobile ? Math.min(vw * 0.98, 400) : Math.min(vw * 0.86, 840);
+  const reservedHeight = isMobile ? 330 : 260;
+  const maxWidthByHeight = Math.max(isMobile ? 320 : 620, (vh - reservedHeight) * 1.28);
+  const maxWidthByViewport = vw * (isMobile ? 0.96 : 0.78);
+  const maxWidth = isMobile ? 390 : 860;
+  const minWidth = isMobile ? Math.min(vw * 0.90, 340) : Math.min(vw * 0.62, 620);
   const width = Math.round(Math.max(minWidth, Math.min(maxWidth, maxWidthByViewport, maxWidthByHeight)));
-  return { width, height: Math.round(width * 2 / 3) };
+  return { width, height: Math.round(width * 0.74) };
 }
 
 function arenaSlotLayout(count: number, isMobile: boolean): ArenaSlotPoint[] {
@@ -976,100 +938,30 @@ function renderGame() {
     const previousLife = previousLives.get(p.id);
     const lostLife = previousLife !== undefined && p.lives < previousLife;
     const visualState = playerVisualState(p, isTurn, isThrowingFrom, isCatchingTo, lostLife);
-    const handTarget = isThrowingFrom && activeLayout
-      ? { x: activeLayout.x, y: activeLayout.y }
-      : isCatchingTo && previousLayout
-        ? { x: previousLayout.x, y: previousLayout.y }
-        : { x: 0, y: 0 };
-    const aimDx = handTarget.x - x;
-    const aimDy = handTarget.y - y;
-    const aimDistance = Math.max(1, Math.hypot(aimDx, aimDy));
-    const aimAngle = Math.atan2(aimDy, aimDx) * 180 / Math.PI;
-    const lookTarget = isThrowingFrom && activeLayout
-      ? { x: activeLayout.x, y: activeLayout.y }
-      : isCatchingTo && previousLayout
-        ? { x: previousLayout.x, y: previousLayout.y }
-        : activeLayout && activeLayout.p.id !== p.id
-          ? { x: activeLayout.x, y: activeLayout.y }
-          : { x: 0, y: 0 };
-    const lookDx = lookTarget.x - x;
-    const lookDy = lookTarget.y - y;
-    const lookDistance = Math.max(1, Math.hypot(lookDx, lookDy));
-    const lookX = Math.max(-18, Math.min(18, (-lookDy / lookDistance) * 15));
-    const lookY = Math.max(-22, Math.min(22, (lookDx / lookDistance) * 18));
-    const lookRoll = Math.max(-7, Math.min(7, (lookDx / lookDistance) * -6));
-    const faceShiftX = Math.max(-5, Math.min(5, (lookDx / lookDistance) * 4));
-    const faceShiftY = Math.max(-5, Math.min(5, (lookDy / lookDistance) * 3));
-    const hopX = Math.cos((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10);
-    const hopY = Math.sin((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10) - (isMobile ? 8 : 12);
-    const palette = AVATAR_BODY_PALETTES[skinIndexOf(p.skinIndex) % AVATAR_BODY_PALETTES.length];
-    const bodySrc = bodyImageSrc(p.skinIndex);
-    const spriteState = characterSpriteState(p.skinIndex, visualState);
-    const useSprite = Boolean(spriteState.src);
-    const bodyFacesLeft = skinIndexOf(p.skinIndex) !== 0;
-    const bodyFaceScale = bodyFacesLeft && lookDx > 0 ? -1 : 1;
-    const spriteFaceScale = lookDx > 0 ? -1 : 1;
     const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
     const depthT = Math.max(0, Math.min(1, point.y));
-    const depthScale = isMobile ? 0.84 + depthT * 0.20 : 0.82 + depthT * 0.27;
+    const depthScale = isMobile ? 0.96 + depthT * 0.12 : 0.92 + depthT * 0.16;
     const depthZ = 40 + Math.round(depthT * 90) + (isTurn ? 24 : 0);
 
     bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
-    slot.className = `p-slot state-${visualState} ${useSprite ? "has-character-sprite" : ""} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
+    slot.className = `p-slot emoji-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
     slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
-    slot.style.setProperty("--slot-hop-x", `${hopX.toFixed(1)}px`);
-    slot.style.setProperty("--slot-hop-y", `${hopY.toFixed(1)}px`);
     slot.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${depthScale.toFixed(3)})`;
     slot.style.zIndex = String(depthZ);
     slot.style.setProperty("--depth-scale", depthScale.toFixed(3));
     slot.style.setProperty("--depth-y", depthT.toFixed(3));
-    slot.style.setProperty("--aim-angle", `${aimAngle.toFixed(1)}deg`);
-    slot.style.setProperty("--hands-rotate", `${(aimAngle + 90).toFixed(1)}deg`);
-    slot.style.setProperty("--look-x", `${lookX.toFixed(1)}deg`);
-    slot.style.setProperty("--look-y", `${lookY.toFixed(1)}deg`);
-    slot.style.setProperty("--look-roll", `${lookRoll.toFixed(1)}deg`);
-    slot.style.setProperty("--face-shift-x", `${faceShiftX.toFixed(1)}px`);
-    slot.style.setProperty("--face-shift-y", `${faceShiftY.toFixed(1)}px`);
-    slot.style.setProperty("--aim-distance", `${aimDistance.toFixed(1)}px`);
-    slot.style.setProperty("--avatar-shirt", palette.shirt);
-    slot.style.setProperty("--avatar-shirt-2", palette.shirt2);
-    slot.style.setProperty("--avatar-pants", palette.pants);
-    slot.style.setProperty("--avatar-shoe", palette.shoe);
-    slot.style.setProperty("--avatar-skin", palette.skin);
-    slot.style.setProperty("--body-face-scale", String(bodyFaceScale));
-    slot.style.setProperty("--body-filter", BODY_IMAGE_FILTERS[skinIndexOf(p.skinIndex)] ?? "none");
-    slot.style.setProperty("--sprite-image", `url("${spriteState.src}")`);
-    slot.style.setProperty("--sprite-frames", String(spriteState.frames));
-    slot.style.setProperty("--sprite-duration", `${spriteState.duration}ms`);
-    slot.style.setProperty("--sprite-facing", String(spriteFaceScale));
-    slot.style.setProperty("--sprite-loop-count", spriteState.loop === false ? "1" : "infinite");
     slot.style.setProperty("--slot-color", slotColor);
     slot.dataset.playerId = p.id;
     slot.dataset.state = visualState;
+    const playerEmoji = PLAYER_EMOJIS[skinIndexOf(p.skinIndex)];
     
     slot.innerHTML = `
-      <div class="p-avatar-wrap ${useSprite ? "has-sprite-art" : bodySrc ? "has-body-art" : ""}">
+      <div class="emoji-player-card">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
-        <span class="avatar-ground" aria-hidden="true"></span>
-        ${useSprite
-          ? `<span class="character-sprite-stage" aria-hidden="true"><span class="character-sprite"></span></span>`
-          : bodySrc
-          ? `<span class="avatar-photo-stage" aria-hidden="true"><img class="avatar-body-art" src="${esc(bodySrc)}" alt="" draggable="false"></span>`
-          : `<span class="avatar-body" aria-hidden="true">
-              <span class="avatar-neck"></span>
-              <span class="avatar-torso"></span>
-              <span class="avatar-arm avatar-arm-a"></span>
-              <span class="avatar-arm avatar-arm-b"></span>
-              <span class="avatar-leg avatar-leg-a"></span>
-              <span class="avatar-leg avatar-leg-b"></span>
-              <span class="avatar-shoe avatar-shoe-a"></span>
-              <span class="avatar-shoe avatar-shoe-b"></span>
-            </span>
-            ${avatarHtml(p.skinIndex)}`
-        }
+        <div class="emoji-player-face" aria-hidden="true">${playerEmoji}</div>
       </div>
       <div class="p-name">${esc(p.nick)}</div>
       <div class="p-lives" aria-label="${p.lives} vidas">${renderLives(p.lives)}</div>
@@ -1161,13 +1053,13 @@ function stopTimer() {
   bomb?.classList.remove("warning", "danger");
   setBombFuseProgress(1);
   document.getElementById("bomb-timer")?.classList.remove("danger");
-  document.querySelectorAll(".p-avatar-wrap").forEach((av) => av.classList.remove("panic"));
+  document.querySelectorAll(".p-avatar-wrap, .emoji-player-card").forEach((av) => av.classList.remove("panic"));
 }
 
 function updateTimer() {
   if (GS.status !== "playing") { stopTimer(); return; }
   
-  const baseDuration = Math.max(3, 10.5 - ((GS.roundCount || 1) * 0.5));
+  const baseDuration = Math.max(3, TURN_DURATION + 0.5 - ((GS.roundCount || 1) * 0.5));
   const elapsed = (now() - GS.turnStartedAt) / 1000;
   const remaining = Math.max(0, Math.ceil(baseDuration - elapsed));
   const fuseRatio = Math.max(0, Math.min(1, (baseDuration - elapsed) / baseDuration));
@@ -1183,9 +1075,9 @@ function updateTimer() {
   setBombFuseProgress(fuseRatio);
   
   if (remaining <= 3 && remaining > 0) {
-    document.querySelectorAll(".p-avatar-wrap").forEach(av => av.classList.add("panic"));
+    document.querySelectorAll(".p-avatar-wrap, .emoji-player-card").forEach(av => av.classList.add("panic"));
   } else {
-    document.querySelectorAll(".p-avatar-wrap").forEach(av => av.classList.remove("panic"));
+    document.querySelectorAll(".p-avatar-wrap, .emoji-player-card").forEach(av => av.classList.remove("panic"));
   }
 
   if (remaining <= 5 && remaining > 0 && Math.floor(elapsed * 10) % 10 === 0) {
@@ -1331,7 +1223,7 @@ function showReaction(playerId: string, emoji: string) {
   pop.setAttribute("aria-hidden", "true");
   slot.appendChild(pop);
 
-  const avatar = slot.querySelector<HTMLElement>(".p-avatar-wrap");
+  const avatar = slot.querySelector<HTMLElement>(".p-avatar-wrap, .emoji-player-card");
   if (avatar) {
     avatar.classList.remove("reaction-hit");
     void avatar.offsetWidth;
@@ -1471,7 +1363,11 @@ async function renderAdmin() {
   adminRef.on("value", (snap: any) => {
     const rooms = (snap.val() ?? {}) as Record<string, Room>;
     const arr = Object.values(rooms);
+    const onlinePlayers = arr.reduce((total, r) => total + Object.values(r.players ?? {}).filter(isFreshPlayer).length, 0);
+    const activeGames = arr.filter((r) => r.status === "playing").length;
     el<HTMLDivElement>("stat-rooms").textContent = String(arr.length);
+    el<HTMLDivElement>("stat-players").textContent = String(onlinePlayers);
+    el<HTMLDivElement>("stat-games").textContent = String(activeGames);
     el<HTMLDivElement>("admin-rooms-list").innerHTML = arr.map((r) => `
       <div class="room-card">
         <div class="room-title">${esc(r.code)} - ${esc(r.status)}</div>

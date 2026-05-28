@@ -20,7 +20,6 @@
     <div><span class="logo-pro">BOMBA PRO</span></div>
     <div class="logo-sub">Ortografia em formato de jogo</div>
   </div>
-  <div class="setup-chars" id="setup-chars"></div>
   <div class="setup-card">
     <input type="text" id="nick-input" class="input-pro" placeholder="SEU NICK" maxlength="15" autocomplete="off">
     <button class="btn btn-purple" id="btn-rapida">PARTIDA RAPIDA GLOBAL</button>
@@ -59,42 +58,11 @@
   </div>
   <div class="arena-wrap">
     <div class="circle-wrapper" id="players-circle">
-      <div class="arena-scene-layer arena-atmosphere-layer" aria-hidden="true">
-        <span class="arena-haze haze-blue"></span>
-        <span class="arena-haze haze-pink"></span>
-        <span class="arena-haze haze-gold"></span>
-        <span class="arena-particle-field"></span>
-      </div>
       <div id="turn-arrow"></div>
-      <div class="arena-platform">
-        <img class="arena-asset-layer arena-asset-bg" src="/arena/layers/arena-background.png" alt="" aria-hidden="true" draggable="false">
-        <img class="arena-asset-layer arena-asset-mobile-base" src="/arena/layers/arena-mobile-base.png" alt="" aria-hidden="true" draggable="false">
-        <img class="arena-asset-layer arena-asset-floor" src="/arena/layers/arena-floor.png" alt="" aria-hidden="true" draggable="false">
-        <img class="arena-asset-layer arena-asset-structure" src="/arena/layers/arena-structure.png" alt="" aria-hidden="true" draggable="false">
-        <img class="arena-asset-layer arena-asset-fx" src="/arena/layers/arena-fx.png" alt="" aria-hidden="true" draggable="false">
-        <div class="arena-floor-depth" aria-hidden="true"></div>
-        <div class="arena-floor-reflection" aria-hidden="true"></div>
-        <div class="arena-floor-disc"></div>
-        <div class="arena-inner-ring"></div>
-        <div class="arena-outer-ring"></div>
-        <div class="arena-wall-layer" aria-hidden="true">
-          <span class="wall-segment wall-n"></span>
-          <span class="wall-segment wall-ne"></span>
-          <span class="wall-segment wall-e"></span>
-          <span class="wall-segment wall-se"></span>
-          <span class="wall-segment wall-s"></span>
-          <span class="wall-segment wall-sw"></span>
-          <span class="wall-segment wall-w"></span>
-          <span class="wall-segment wall-nw"></span>
-        </div>
-        <div class="arena-floor-ring"></div>
-        <div class="arena-pulse-ring pulse-1"></div>
-        <div class="arena-pulse-ring pulse-2"></div>
-        <div class="arena-fx-layer" aria-hidden="true">
-          <span class="arena-scanline"></span>
-          <span class="arena-energy-sweep"></span>
-          <span class="arena-center-bloom"></span>
-        </div>
+      <div class="clean-playfield" aria-hidden="true">
+        <span class="clean-playfield-grid"></span>
+        <span class="clean-playfield-ring"></span>
+        <span class="clean-playfield-center"></span>
       </div>
       <div id="bomb-el">
         <div class="bomb-glow-halo"></div>
@@ -130,10 +98,8 @@
     <div class="q-container" id="q-card" style="display:none">
       <div class="q-top-bar"></div>
       <div class="q-cat-label" id="q-cat">CATEGORIA</div>
-      <div id="my-turn-hint" class="my-turn-hint" style="display:none">SUA VEZ - RESPONDA RAPIDO!</div>
       <div class="q-word-pro" id="q-word">PALAVRA</div>
       <div class="op-grid" id="opcoes"></div>
-      <div class="q-tip" id="q-tip" style="display:none"></div>
     </div>
   </div>
 </div>
@@ -162,12 +128,10 @@
 </div>
 
 <div id="win-overlay">
-  <div class="win-stars" id="win-stars"></div>
   <div class="win-crown-anim">WIN</div>
   <div class="win-title">WIN!</div>
   <div class="win-sub">VENCEDOR DA PARTIDA</div>
   <div class="win-name" id="winner-name">-</div>
-  <div class="ranking-section" id="ranking-section"></div>
   <div class="win-acts">
     <button class="btn btn-rim" id="btn-jogar-novamente">JOGAR NOVAMENTE</button>
   </div>
