@@ -944,21 +944,20 @@ function renderGame() {
       <div class="p-avatar-wrap ${bodySrc ? "has-body-art" : ""}">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
         <span class="avatar-ground" aria-hidden="true"></span>
-        ${bodySrc ? `<span class="avatar-photo-stage" aria-hidden="true"><img class="avatar-body-art" src="${esc(bodySrc)}" alt="" draggable="false"></span>` : ""}
-        <span class="avatar-body" aria-hidden="true">
-          <span class="avatar-neck"></span>
-          <span class="avatar-torso"></span>
-          <span class="avatar-arm avatar-arm-a"></span>
-          <span class="avatar-arm avatar-arm-b"></span>
-          <span class="avatar-leg avatar-leg-a"></span>
-          <span class="avatar-leg avatar-leg-b"></span>
-          <span class="avatar-shoe avatar-shoe-a"></span>
-          <span class="avatar-shoe avatar-shoe-b"></span>
-        </span>
-        <span class="throw-arm throw-arm-a" aria-hidden="true"></span>
-        <span class="throw-arm throw-arm-b" aria-hidden="true"></span>
-        <span class="hold-hands" aria-hidden="true"></span>
-        ${avatarHtml(p.skinIndex)}
+        ${bodySrc
+          ? `<span class="avatar-photo-stage" aria-hidden="true"><img class="avatar-body-art" src="${esc(bodySrc)}" alt="" draggable="false"></span>`
+          : `<span class="avatar-body" aria-hidden="true">
+              <span class="avatar-neck"></span>
+              <span class="avatar-torso"></span>
+              <span class="avatar-arm avatar-arm-a"></span>
+              <span class="avatar-arm avatar-arm-b"></span>
+              <span class="avatar-leg avatar-leg-a"></span>
+              <span class="avatar-leg avatar-leg-b"></span>
+              <span class="avatar-shoe avatar-shoe-a"></span>
+              <span class="avatar-shoe avatar-shoe-b"></span>
+            </span>
+            ${avatarHtml(p.skinIndex)}`
+        }
       </div>
       <div class="p-name">${esc(p.nick)}</div>
       <div class="p-lives" aria-label="${p.lives} vidas">${renderLives(p.lives)}</div>
