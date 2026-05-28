@@ -4021,9 +4021,20 @@ button,input{font:inherit}
     overflow-y:auto;
     padding-top:54px;
     padding-bottom:100px;
+    min-height:100svh;
   }
   #scr-game.active.no-question .arena-wrap{
-    transform:translateY(-14px);
+    transform:translateY(-8px) scale(1.08);
+    transform-origin:top center;
+  }
+  #scr-game.active.no-question .emoji-menu{
+    position:relative;
+    left:auto;
+    right:auto;
+    bottom:auto;
+    transform:none;
+    margin:18px auto 0;
+    z-index:8;
   }
 }
 
