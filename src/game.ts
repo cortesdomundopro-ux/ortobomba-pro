@@ -1,4 +1,4 @@
-import { ANIMALS, AVATAR_IMAGES } from "./animals";
+import { ANIMALS, AVATAR_IMAGES, BODY_IMAGES } from "./animals";
 import { Q, type Question } from "./questions";
 
 const FIREBASE_CONFIG = {
@@ -133,6 +133,10 @@ function avatarHtml(skinIndex: number): string {
   const fallback = `<span class="avatar-fallback">${ANIMALS[idx]}</span>`;
   if (!src) return `<span class="avatar-head">${fallback}</span>`;
   return `<span class="avatar-head">${fallback}<img class="avatar-art" src="${esc(src)}" alt="" draggable="false" loading="eager" onload="this.previousElementSibling.style.display='none'" onerror="this.style.display='none';this.previousElementSibling.style.display='block'"></span>`;
+}
+
+function bodyImageSrc(skinIndex: number): string {
+  return BODY_IMAGES[skinIndexOf(skinIndex)] ?? "";
 }
 
 function normalizeReactionEmoji(raw: string): string {
@@ -803,6 +807,9 @@ function renderGame() {
     const hopX = Math.cos((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10);
     const hopY = Math.sin((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10) - (isMobile ? 8 : 12);
     const palette = AVATAR_BODY_PALETTES[skinIndexOf(p.skinIndex) % AVATAR_BODY_PALETTES.length];
+    const bodySrc = bodyImageSrc(p.skinIndex);
+    const bodyFacesLeft = skinIndexOf(p.skinIndex) !== 0;
+    const bodyFaceScale = bodyFacesLeft && lookDx > 0 ? -1 : 1;
 
     bombPoints.set(p.id, bombPoint);
 
@@ -826,12 +833,14 @@ function renderGame() {
     slot.style.setProperty("--avatar-pants", palette.pants);
     slot.style.setProperty("--avatar-shoe", palette.shoe);
     slot.style.setProperty("--avatar-skin", palette.skin);
+    slot.style.setProperty("--body-face-scale", String(bodyFaceScale));
     slot.dataset.playerId = p.id;
     
     slot.innerHTML = `
-      <div class="p-avatar-wrap">
+      <div class="p-avatar-wrap ${bodySrc ? "has-body-art" : ""}">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
         <span class="avatar-ground" aria-hidden="true"></span>
+        ${bodySrc ? `<span class="avatar-photo-stage" aria-hidden="true"><img class="avatar-body-art" src="${esc(bodySrc)}" alt="" draggable="false"></span>` : ""}
         <span class="avatar-body" aria-hidden="true">
           <span class="avatar-neck"></span>
           <span class="avatar-torso"></span>

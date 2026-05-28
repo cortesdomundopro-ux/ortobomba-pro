@@ -15,3 +15,12 @@ export const AVATAR_IMAGES = [
   "/avatars/avatar-4.png",
   "/avatars/avatar-5.png"
 ];
+
+export const BODY_IMAGES = [
+  "/characters/kid-0.png",
+  "/characters/kid-1.png",
+  "/characters/kid-2.png",
+  "/characters/kid-3.png",
+  "/characters/kid-0.png",
+  "/characters/kid-3.png"
+];

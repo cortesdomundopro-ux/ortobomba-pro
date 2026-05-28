@@ -1832,3 +1832,99 @@ button,input{font:inherit}
     50%{top:-16px;transform:translateX(-50%) scale(1.08)}
   }
 }
+
+/* Photo cutout body sprites for the kid-style characters. */
+.has-body-art.p-avatar-wrap{
+  width:104px;
+  height:142px;
+}
+.has-body-art.p-avatar-wrap::before{
+  width:66px;
+  height:66px;
+  top:5px;
+  background:radial-gradient(circle at 50% 55%,rgba(255,255,255,.78),rgba(255,255,255,.22) 58%,rgba(255,255,255,0) 64%);
+  z-index:1;
+}
+.has-body-art .avatar-body,
+.has-body-art .avatar-neck,
+.has-body-art .avatar-torso,
+.has-body-art .avatar-arm,
+.has-body-art .avatar-leg,
+.has-body-art .avatar-shoe,
+.has-body-art .avatar-head{
+  display:none!important;
+}
+.avatar-photo-stage{
+  position:absolute;
+  inset:-12px -10px 0;
+  z-index:5;
+  pointer-events:none;
+  transform-origin:50% 84%;
+}
+.avatar-body-art{
+  position:absolute;
+  left:50%;
+  bottom:0;
+  width:auto;
+  height:142px;
+  max-width:none;
+  border-radius:0!important;
+  object-fit:contain;
+  transform:translateX(-50%) scaleX(var(--body-face-scale,1));
+  transform-origin:50% 82%;
+  filter:drop-shadow(0 8px 11px rgba(0,0,0,.42));
+}
+.active-turn .has-body-art .avatar-body-art{
+  filter:drop-shadow(0 10px 13px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,199,0,.45));
+}
+.throwing-from .avatar-photo-stage{
+  animation:photoBodyThrow var(--throw-time,940ms) cubic-bezier(.15,.9,.18,1) both;
+}
+.catching-to .avatar-photo-stage{
+  animation:photoBodyCatch var(--throw-time,940ms) cubic-bezier(.15,.9,.18,1) both;
+}
+.has-body-art .hold-hands{
+  width:72px;
+  height:66px;
+  top:52%;
+  z-index:8;
+}
+.has-body-art .p-crown{
+  top:-7px;
+}
+@keyframes photoBodyThrow{
+  0%{transform:translateY(0) rotate(0deg) scale(1)}
+  24%{transform:translateY(5px) rotate(calc(0deg - var(--look-roll,0deg))) scale(.98)}
+  50%{transform:translateY(-14px) rotate(var(--look-roll,0deg)) scale(1.06)}
+  78%{transform:translateY(2px) rotate(0deg) scale(1)}
+  100%{transform:translateY(0) rotate(0deg) scale(1)}
+}
+@keyframes photoBodyCatch{
+  0%{transform:translateY(4px) rotate(0deg) scale(.98)}
+  34%{transform:translateY(7px) rotate(calc(0deg - var(--look-roll,0deg))) scale(.96)}
+  58%{transform:translateY(-15px) rotate(var(--look-roll,0deg)) scale(1.08)}
+  82%{transform:translateY(3px) rotate(0deg) scale(.99)}
+  100%{transform:translateY(0) rotate(0deg) scale(1)}
+}
+
+@media(max-width:600px){
+  .has-body-art.p-avatar-wrap{
+    width:82px;
+    height:112px;
+  }
+  .has-body-art.p-avatar-wrap::before{
+    width:52px;
+    height:52px;
+    top:3px;
+  }
+  .avatar-photo-stage{
+    inset:-8px -8px 0;
+  }
+  .avatar-body-art{
+    height:112px;
+  }
+  .has-body-art .hold-hands{
+    width:58px;
+    height:54px;
+  }
+}
