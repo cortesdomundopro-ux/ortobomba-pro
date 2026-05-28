@@ -3378,6 +3378,7 @@ button,input{font:inherit}
   background:
     radial-gradient(ellipse at 50% 22%,rgba(92,28,120,.18),transparent 42%),
     linear-gradient(135deg,#070011 0%,#130019 43%,#04111b 100%);
+  overflow-x:hidden;
 }
 
 .arena-wrap{
@@ -3688,41 +3689,41 @@ button,input{font:inherit}
     opacity:.12;
   }
   .p-slot{
-    width:76px;
-    height:116px;
+    width:66px;
+    height:104px;
   }
   .p-slot::before{
-    top:79%;
-    width:66px;
-    height:22px;
+    top:80%;
+    width:58px;
+    height:20px;
   }
   .p-slot.active-turn::before{
-    width:78px;
+    width:68px;
   }
   .active-turn .p-avatar-wrap{
-    transform:scale(1.04)!important;
+    transform:scale(1.03)!important;
   }
   .has-body-art.p-avatar-wrap{
-    width:78px;
-    height:108px;
+    width:66px;
+    height:96px;
   }
   .has-body-art.p-avatar-wrap::before{
-    width:50px;
-    height:58px;
+    width:44px;
+    height:52px;
     top:6px;
   }
   .has-body-art.p-avatar-wrap::after{
-    width:58px;
-    height:12px;
+    width:50px;
+    height:11px;
   }
   .avatar-photo-stage{
-    inset:-7px -6px 0;
+    inset:-5px -4px 0;
   }
   .avatar-body-art{
-    height:108px;
+    height:96px;
   }
   .p-name{
-    max-width:78px;
+    max-width:70px;
     font-size:7px;
     margin-top:-7px;
     padding:1px 4px;

@@ -736,6 +736,40 @@ const ARENA_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
   ]
 };
 
+const ARENA_MOBILE_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
+  1: [{ x: 0.5, y: 0.5 }],
+  2: [
+    { x: 0.5, y: 0.25 },
+    { x: 0.5, y: 0.74 }
+  ],
+  3: [
+    { x: 0.25, y: 0.27 },
+    { x: 0.75, y: 0.27 },
+    { x: 0.5, y: 0.76 }
+  ],
+  4: [
+    { x: 0.24, y: 0.28 },
+    { x: 0.76, y: 0.28 },
+    { x: 0.76, y: 0.75 },
+    { x: 0.24, y: 0.75 }
+  ],
+  5: [
+    { x: 0.19, y: 0.29 },
+    { x: 0.5, y: 0.25 },
+    { x: 0.81, y: 0.29 },
+    { x: 0.71, y: 0.76 },
+    { x: 0.29, y: 0.76 }
+  ],
+  6: [
+    { x: 0.18, y: 0.30 },
+    { x: 0.5, y: 0.25 },
+    { x: 0.82, y: 0.30 },
+    { x: 0.82, y: 0.74 },
+    { x: 0.5, y: 0.78 },
+    { x: 0.18, y: 0.74 }
+  ]
+};
+
 function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   const vw = Math.max(320, window.innerWidth || 320);
   const vh = Math.max(520, window.innerHeight || 720);
@@ -748,9 +782,10 @@ function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   return { width, height: Math.round(width * 2 / 3) };
 }
 
-function arenaSlotLayout(count: number): ArenaSlotPoint[] {
+function arenaSlotLayout(count: number, isMobile: boolean): ArenaSlotPoint[] {
   const normalized = Math.max(1, Math.min(MAX_PLAYERS, count || 1));
-  return ARENA_SLOT_LAYOUTS[normalized] ?? ARENA_SLOT_LAYOUTS[MAX_PLAYERS];
+  const layouts = isMobile ? ARENA_MOBILE_SLOT_LAYOUTS : ARENA_SLOT_LAYOUTS;
+  return layouts[normalized] ?? layouts[MAX_PLAYERS];
 }
 
 function playerVisualState(
@@ -906,7 +941,7 @@ function renderGame() {
   const previousTurnId = prevTurnId;
   const turnChanged = previousTurnId !== GS.currentTurn;
   const bombPoints = new Map<string, BombPoint>();
-  const slotLayout = arenaSlotLayout(count);
+  const slotLayout = arenaSlotLayout(count, isMobile);
   const layout = players.map((p, i) => {
     const point = slotLayout[i % slotLayout.length];
     const x = (point.x - 0.5) * stage.width;
