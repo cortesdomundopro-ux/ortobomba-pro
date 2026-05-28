@@ -4027,13 +4027,11 @@ button,input{font:inherit}
     transform:translateY(-8px) scale(1.08);
     transform-origin:top center;
   }
-  #scr-game.active.no-question .emoji-menu{
-    position:relative;
-    left:auto;
-    right:auto;
+  body:has(#scr-game.active.no-question) .emoji-menu{
+    top:calc(54px + 72vw + 26px);
     bottom:auto;
-    transform:none;
-    margin:18px auto 0;
+    left:50%;
+    transform:translateX(-50%);
     z-index:8;
   }
 }
