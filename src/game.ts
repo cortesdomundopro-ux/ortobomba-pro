@@ -759,17 +759,20 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   const dy = to.y - from.y;
   const distance = Math.hypot(dx, dy);
 
-  if (prefersReducedMotion.matches || distance < 4) {
+  if (distance < 4) {
     bomb.classList.remove("bomb-throwing", "pass-pop");
     bomb.style.transition = "";
     bomb.style.transform = targetTransform;
     return;
   }
 
+  const passMs = prefersReducedMotion.matches ? Math.round(BOMB_PASS_MS * 0.72) : BOMB_PASS_MS;
+  const arcMultiplier = prefersReducedMotion.matches ? 0.14 : 0.28;
+  const arcCap = prefersReducedMotion.matches ? 64 : 112;
   bomb.style.setProperty("--throw-distance", `${distance.toFixed(1)}px`);
   bomb.style.setProperty("--throw-angle", `${(Math.atan2(dy, dx) * 180 / Math.PI).toFixed(1)}deg`);
   bomb.style.setProperty("--throw-arc", `${Math.min(92, Math.max(36, distance * 0.24)).toFixed(1)}px`);
-  bomb.style.setProperty("--throw-time", `${BOMB_PASS_MS}ms`);
+  bomb.style.setProperty("--throw-time", `${passMs}ms`);
 
   activeBombPass?.cancel();
   activeBombPass = null;
@@ -778,7 +781,7 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   bomb.style.transform = bombTransform(from);
   void bomb.offsetWidth;
 
-  const arc = Math.min(112, Math.max(42, distance * 0.28));
+  const arc = Math.min(arcCap, Math.max(32, distance * arcMultiplier));
   const recoil = { x: from.x - dx * 0.08, y: from.y - dy * 0.08 - arc * 0.1 };
   const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 - arc };
   const settle = { x: to.x + dx * 0.035, y: to.y + dy * 0.035 + arc * 0.05 };
@@ -786,14 +789,14 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   bomb.classList.add("bomb-throwing", "pass-pop");
   if (typeof bomb.animate !== "function") {
     window.requestAnimationFrame(() => {
-      bomb.style.transition = `transform ${BOMB_PASS_MS}ms cubic-bezier(.16,.92,.18,1)`;
+      bomb.style.transition = `transform ${passMs}ms cubic-bezier(.16,.92,.18,1)`;
       bomb.style.transform = targetTransform;
     });
     window.setTimeout(() => {
       bomb.classList.remove("bomb-throwing", "pass-pop");
       bomb.style.transition = "";
       bomb.style.transform = targetTransform;
-    }, BOMB_PASS_MS + 90);
+    }, passMs + 90);
     return;
   }
 
@@ -805,7 +808,7 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
       { transform: bombTransform(settle), offset: 0.86, easing: "cubic-bezier(.14,.9,.22,1)" },
       { transform: targetTransform, offset: 1 }
     ],
-    { duration: BOMB_PASS_MS, easing: "linear", fill: "both" }
+    { duration: passMs, easing: "linear", fill: "both" }
   );
   activeBombPass = passAnimation;
 
@@ -819,7 +822,7 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   };
 
   passAnimation.onfinish = finishPass;
-  window.setTimeout(finishPass, BOMB_PASS_MS + 90);
+  window.setTimeout(finishPass, passMs + 90);
 }
 
 function setBombFuseProgress(ratio: number) {
