@@ -19,7 +19,7 @@ export const AVATAR_IMAGES = [
 export const BODY_IMAGES = [
   "/characters/kid-0.png",
   "/characters/kid-1.png",
-  "/characters/kid-2.png",
+  "/characters/kid-2-clean.png",
   "/characters/kid-3.png",
   "/characters/kid-0.png",
   "/characters/kid-3.png"
