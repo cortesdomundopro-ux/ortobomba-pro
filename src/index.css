@@ -2456,3 +2456,403 @@ button,input{font:inherit}
     height:116px;
   }
 }
+
+/* Premium arena depth pass. Keeps gameplay center readable while adding semi-3D volume. */
+.circle-wrapper{
+  isolation:isolate;
+  overflow:visible;
+  perspective:1350px;
+  filter:
+    drop-shadow(0 42px 64px rgba(0,0,0,.52))
+    drop-shadow(0 0 34px rgba(0,217,255,.08))
+    drop-shadow(0 0 54px rgba(255,0,122,.13));
+}
+.circle-wrapper::before,
+.circle-wrapper::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:52%;
+  width:132%;
+  height:110%;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
+  z-index:-2;
+}
+.circle-wrapper::before{
+  background:
+    radial-gradient(ellipse at 50% 64%,rgba(0,0,0,.56),rgba(0,0,0,.22) 42%,transparent 74%),
+    radial-gradient(ellipse at 18% 22%,rgba(0,217,255,.16),transparent 34%),
+    radial-gradient(ellipse at 82% 25%,rgba(255,45,116,.18),transparent 36%),
+    radial-gradient(ellipse at 50% 5%,rgba(255,255,255,.08),transparent 35%);
+  filter:blur(4px);
+  opacity:.92;
+}
+.circle-wrapper::after{
+  top:46%;
+  width:118%;
+  height:94%;
+  z-index:-1;
+  background:
+    linear-gradient(118deg,transparent 0 21%,rgba(0,217,255,.12) 23%,transparent 35% 100%),
+    linear-gradient(62deg,transparent 0 62%,rgba(255,0,122,.13) 64%,transparent 76% 100%),
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,.08),transparent 58%);
+  mix-blend-mode:screen;
+  opacity:.68;
+  animation:premiumSpotDrift 9s ease-in-out infinite alternate;
+}
+
+.arena-wrap::before{
+  width:min(920px,112vw);
+  height:min(660px,86vh);
+  background:
+    radial-gradient(circle at 18% 22%,rgba(0,217,255,.20),transparent 27%),
+    radial-gradient(circle at 82% 22%,rgba(255,45,116,.22),transparent 29%),
+    radial-gradient(circle at 18% 80%,rgba(53,240,107,.14),transparent 25%),
+    radial-gradient(circle at 82% 80%,rgba(217,70,255,.16),transparent 27%),
+    radial-gradient(ellipse at 50% 52%,rgba(255,199,0,.07),transparent 42%);
+  filter:blur(30px);
+  opacity:.98;
+}
+.arena-wrap::after{
+  width:min(880px,106vw);
+  height:min(630px,82vh);
+  background:
+    radial-gradient(circle at 13% 18%,rgba(0,217,255,.30) 0 1px,transparent 2px),
+    radial-gradient(circle at 78% 24%,rgba(255,45,116,.30) 0 1px,transparent 2px),
+    radial-gradient(circle at 34% 74%,rgba(255,199,0,.24) 0 1px,transparent 2px),
+    radial-gradient(circle at 65% 66%,rgba(255,255,255,.18) 0 1px,transparent 2px);
+  background-size:112px 96px,156px 136px,188px 170px,224px 204px;
+  opacity:.36;
+}
+
+.arena-platform{
+  transform:translate(-50%,-50%) perspective(1250px) rotateX(8deg) scale(1.075);
+  transform-origin:50% 61%;
+  filter:
+    drop-shadow(0 28px 34px rgba(0,0,0,.62))
+    drop-shadow(0 0 38px rgba(255,0,122,.28))
+    drop-shadow(0 0 54px rgba(0,217,255,.12));
+  animation:premiumArenaBreathe 6.8s ease-in-out infinite alternate;
+}
+.arena-platform::before{
+  inset:-12%;
+  border-radius:18%;
+  clip-path:polygon(21% 0,79% 0,100% 21%,100% 79%,79% 100%,21% 100%,0 79%,0 21%);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.13),rgba(255,255,255,.025) 34%,rgba(0,0,0,.46) 100%),
+    conic-gradient(from -28deg,
+      rgba(0,217,255,.20),
+      rgba(12,28,56,.78) 12%,
+      rgba(255,0,122,.23) 28%,
+      rgba(49,12,64,.82) 42%,
+      rgba(255,199,0,.18) 57%,
+      rgba(22,36,26,.72) 72%,
+      rgba(0,217,255,.20) 100%);
+  box-shadow:
+    inset 0 0 0 12px rgba(5,7,18,.76),
+    inset 0 0 0 18px rgba(255,255,255,.025),
+    inset 0 34px 38px rgba(255,255,255,.055),
+    inset 0 -46px 64px rgba(0,0,0,.68),
+    0 26px 42px rgba(0,0,0,.58),
+    0 0 44px rgba(0,217,255,.08);
+  opacity:.94;
+}
+.arena-platform::after{
+  inset:-4.8%;
+  border-radius:18%;
+  clip-path:polygon(21% 0,79% 0,100% 21%,100% 79%,79% 100%,21% 100%,0 79%,0 21%);
+  border:1px solid rgba(255,255,255,.12);
+  background:
+    linear-gradient(90deg,rgba(0,217,255,.14),transparent 19% 81%,rgba(255,0,122,.15)),
+    linear-gradient(180deg,rgba(255,255,255,.09),transparent 38% 72%,rgba(0,0,0,.34));
+  box-shadow:
+    inset 0 0 0 9px rgba(0,0,0,.22),
+    inset 0 0 42px rgba(0,217,255,.10),
+    inset 0 0 76px rgba(255,0,122,.10),
+    0 0 26px rgba(255,255,255,.04);
+  opacity:.82;
+}
+
+.arena-floor-disc{
+  width:92%;
+  height:92%;
+  border-radius:18%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  transform:translate(-50%,-50%) scaleY(.94);
+  background:
+    radial-gradient(circle at 50% 52%,rgba(255,255,255,.105),transparent 18%),
+    radial-gradient(ellipse at 50% 70%,rgba(255,255,255,.055),transparent 44%),
+    conic-gradient(from -22deg at 50% 50%,
+      rgba(0,217,255,.17),
+      rgba(31,18,78,.52) 22%,
+      rgba(255,0,122,.17) 38%,
+      rgba(31,12,70,.58) 55%,
+      rgba(255,199,0,.14) 68%,
+      rgba(53,240,107,.11) 82%,
+      rgba(0,217,255,.17)),
+    linear-gradient(180deg,rgba(38,54,82,.76),rgba(16,19,44,.91) 46%,rgba(5,6,20,.98));
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.13),
+    inset 0 0 0 12px rgba(255,255,255,.018),
+    inset 0 30px 42px rgba(255,255,255,.055),
+    inset 0 -54px 82px rgba(0,0,0,.74),
+    inset 0 0 92px rgba(0,217,255,.12),
+    inset 0 0 118px rgba(255,0,122,.13),
+    0 0 42px rgba(0,217,255,.08),
+    0 0 58px rgba(255,0,122,.13);
+  animation:premiumFloorEnergy 10s ease-in-out infinite alternate;
+}
+.arena-floor-disc::before{
+  background-image:
+    linear-gradient(rgba(164,224,255,.16) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,86,188,.12) 1px,transparent 1px),
+    radial-gradient(circle,rgba(255,255,255,.16) 0 1px,transparent 1.8px),
+    linear-gradient(135deg,transparent 45%,rgba(255,255,255,.055) 49%,transparent 53%);
+  background-size:28px 28px,28px 28px,84px 84px,168px 168px;
+  background-position:center;
+  opacity:.76;
+  mix-blend-mode:screen;
+  mask-image:radial-gradient(ellipse at center,black 0 62%,rgba(0,0,0,.72) 73%,transparent 91%);
+  -webkit-mask-image:radial-gradient(ellipse at center,black 0 62%,rgba(0,0,0,.72) 73%,transparent 91%);
+}
+.arena-floor-disc::after{
+  width:34%;
+  height:34%;
+  border-radius:18%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  border:1px solid rgba(255,255,255,.12);
+  background:
+    radial-gradient(circle at 50% 48%,rgba(255,255,255,.06),transparent 46%),
+    radial-gradient(circle at 50% 50%,rgba(0,217,255,.08),transparent 58%),
+    linear-gradient(135deg,rgba(255,255,255,.035),rgba(255,0,122,.045));
+  box-shadow:
+    inset 0 0 18px rgba(0,217,255,.13),
+    inset 0 0 28px rgba(255,0,122,.09),
+    0 0 20px rgba(0,217,255,.08);
+  opacity:.54;
+  animation:premiumCenterPulse 4.8s ease-in-out infinite alternate;
+}
+.arena-inner-ring{
+  width:74%;
+  height:74%;
+  border-width:2px;
+  border-color:rgba(0,217,255,.34);
+  border-radius:18%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  box-shadow:
+    inset 0 0 26px rgba(0,217,255,.11),
+    inset 0 0 42px rgba(255,0,122,.06),
+    0 0 26px rgba(0,217,255,.13);
+  opacity:.72;
+}
+.arena-outer-ring{
+  inset:-5.2%;
+  border:9px solid transparent;
+  border-radius:18%;
+  clip-path:polygon(21% 0,79% 0,100% 21%,100% 79%,79% 100%,21% 100%,0 79%,0 21%);
+  background:
+    linear-gradient(180deg,rgba(6,8,22,.74),rgba(2,2,12,.42)) padding-box,
+    conic-gradient(from -26deg,
+      #21e8ff 0 12%,
+      #1560ff 17%,
+      #ff2d74 28% 42%,
+      #ffc700 48% 58%,
+      #b847ff 65% 76%,
+      #35f06b 84%,
+      #21e8ff 100%) border-box;
+  box-shadow:
+    0 0 0 2px rgba(0,0,0,.92),
+    0 0 22px rgba(255,0,122,.86),
+    0 0 62px rgba(255,0,122,.34),
+    0 0 84px rgba(0,217,255,.13),
+    inset 0 0 0 1px rgba(255,255,255,.18),
+    inset 0 14px 26px rgba(255,255,255,.075),
+    inset 0 -28px 44px rgba(0,0,0,.72);
+  animation:premiumRimPulse 5.6s ease-in-out infinite alternate;
+}
+.arena-floor-ring{
+  display:block!important;
+  width:74%;
+  height:30%;
+  bottom:7%;
+  border-width:2px;
+  border-color:rgba(0,217,255,.26);
+  opacity:.34;
+  filter:blur(.2px);
+  box-shadow:
+    0 0 20px rgba(0,217,255,.14),
+    0 0 42px rgba(255,0,122,.10),
+    inset 0 0 14px rgba(0,217,255,.08);
+}
+.arena-pulse-ring{
+  width:50%;
+  height:50%;
+  border-radius:18%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  border-color:rgba(0,217,255,.20);
+  opacity:.22;
+}
+
+.p-slot::before{
+  background:
+    radial-gradient(ellipse at 50% 52%,rgba(255,255,255,.16),rgba(0,0,0,.26) 61%,transparent 74%),
+    linear-gradient(90deg,transparent, color-mix(in srgb, var(--slot-color,#ff007a) 60%, transparent) 48%, transparent),
+    linear-gradient(135deg,rgba(255,255,255,.08),rgba(0,0,0,.24));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--slot-color,#ff007a) 78%, white 8%),
+    inset 0 0 11px color-mix(in srgb, var(--slot-color,#ff007a) 42%, transparent),
+    0 0 17px color-mix(in srgb, var(--slot-color,#ff007a) 62%, transparent),
+    0 12px 21px rgba(0,0,0,.42);
+}
+.active-turn .has-body-art.p-avatar-wrap::before{
+  opacity:.54;
+  filter:blur(.2px) saturate(1.15);
+}
+.avatar-body-art{
+  filter:
+    var(--body-filter,none)
+    drop-shadow(0 14px 14px rgba(0,0,0,.50))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--slot-color,#ff007a) 22%, transparent));
+}
+
+.game-topbar{
+  background:
+    linear-gradient(180deg,rgba(7,4,18,.96),rgba(8,3,20,.70));
+  border-bottom-color:rgba(255,0,122,.30);
+  box-shadow:
+    0 10px 28px rgba(0,0,0,.30),
+    0 1px 0 rgba(255,255,255,.05),
+    0 0 18px rgba(255,0,122,.10);
+}
+.round-badge{
+  padding:6px 18px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:999px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.018)),
+    radial-gradient(circle at 50% 0,rgba(0,217,255,.12),transparent 70%);
+  box-shadow:inset 0 0 14px rgba(255,255,255,.03),0 0 18px rgba(0,217,255,.07);
+}
+.q-container,
+.emoji-menu{
+  background:
+    linear-gradient(180deg,rgba(22,17,55,.92),rgba(8,7,30,.94)),
+    radial-gradient(circle at 50% 0,rgba(255,0,122,.18),transparent 68%);
+  border-color:rgba(255,255,255,.10);
+  box-shadow:
+    0 20px 42px rgba(0,0,0,.42),
+    0 0 26px rgba(255,0,122,.18),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    inset 0 -18px 32px rgba(0,0,0,.30);
+}
+.op-btn{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.92),
+    0 10px 20px rgba(0,0,0,.20);
+}
+.op-btn:hover:not(:disabled){
+  box-shadow:
+    0 10px 28px rgba(255,0,122,.36),
+    0 0 22px rgba(0,217,255,.13),
+    inset 0 1px 0 rgba(255,255,255,.36);
+}
+.emoji-btn{
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.10),
+    0 8px 16px rgba(0,0,0,.24),
+    0 0 14px rgba(255,0,122,.10);
+}
+
+@keyframes premiumArenaBreathe{
+  from{filter:drop-shadow(0 28px 34px rgba(0,0,0,.62)) drop-shadow(0 0 34px rgba(255,0,122,.24)) drop-shadow(0 0 46px rgba(0,217,255,.10))}
+  to{filter:drop-shadow(0 30px 38px rgba(0,0,0,.64)) drop-shadow(0 0 44px rgba(255,0,122,.32)) drop-shadow(0 0 58px rgba(0,217,255,.15))}
+}
+@keyframes premiumSpotDrift{
+  from{transform:translate(-51%,-50%) scale(.98);opacity:.54}
+  to{transform:translate(-49%,-51%) scale(1.03);opacity:.78}
+}
+@keyframes premiumFloorEnergy{
+  from{filter:saturate(1) brightness(1)}
+  to{filter:saturate(1.12) brightness(1.045)}
+}
+@keyframes premiumCenterPulse{
+  from{opacity:.42;box-shadow:inset 0 0 18px rgba(0,217,255,.11),inset 0 0 28px rgba(255,0,122,.07),0 0 16px rgba(0,217,255,.06)}
+  to{opacity:.60;box-shadow:inset 0 0 24px rgba(0,217,255,.16),inset 0 0 36px rgba(255,0,122,.11),0 0 24px rgba(255,0,122,.09)}
+}
+@keyframes premiumRimPulse{
+  from{box-shadow:0 0 0 2px rgba(0,0,0,.92),0 0 20px rgba(255,0,122,.72),0 0 58px rgba(255,0,122,.28),0 0 76px rgba(0,217,255,.10),inset 0 0 0 1px rgba(255,255,255,.16),inset 0 14px 26px rgba(255,255,255,.07),inset 0 -28px 44px rgba(0,0,0,.72)}
+  to{box-shadow:0 0 0 2px rgba(0,0,0,.92),0 0 26px rgba(255,0,122,.88),0 0 78px rgba(255,0,122,.38),0 0 94px rgba(0,217,255,.15),inset 0 0 0 1px rgba(255,255,255,.20),inset 0 16px 30px rgba(255,255,255,.08),inset 0 -30px 48px rgba(0,0,0,.76)}
+}
+
+@media(max-width:600px){
+  .circle-wrapper{
+    filter:
+      drop-shadow(0 28px 44px rgba(0,0,0,.46))
+      drop-shadow(0 0 22px rgba(255,0,122,.10));
+  }
+  .circle-wrapper::before{
+    width:118%;
+    height:98%;
+    opacity:.68;
+    filter:blur(5px);
+  }
+  .circle-wrapper::after{
+    opacity:.34;
+  }
+  .arena-platform{
+    transform:translate(-50%,-50%) perspective(900px) rotateX(6deg) scale(1.045);
+    animation:none;
+  }
+  .arena-platform::before{
+    inset:-9%;
+    box-shadow:
+      inset 0 0 0 8px rgba(5,7,18,.72),
+      inset 0 22px 30px rgba(255,255,255,.04),
+      inset 0 -34px 48px rgba(0,0,0,.62),
+      0 18px 30px rgba(0,0,0,.48);
+  }
+  .arena-platform::after{
+    inset:-3.5%;
+  }
+  .arena-floor-disc{
+    width:92%;
+    height:92%;
+    animation:none;
+  }
+  .arena-floor-disc::before{
+    background-size:22px 22px,22px 22px,74px 74px,132px 132px;
+    opacity:.64;
+  }
+  .arena-outer-ring{
+    inset:-4.2%;
+    border-width:6px;
+    animation:none;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,.9),
+      0 0 18px rgba(255,0,122,.72),
+      0 0 48px rgba(255,0,122,.27),
+      inset 0 10px 20px rgba(255,255,255,.06),
+      inset 0 -22px 34px rgba(0,0,0,.68);
+  }
+  .arena-floor-ring{
+    opacity:.20;
+  }
+  .q-container,
+  .emoji-menu{
+    box-shadow:
+      0 14px 30px rgba(0,0,0,.36),
+      0 0 20px rgba(255,0,122,.16),
+      inset 0 1px 0 rgba(255,255,255,.07);
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .arena-platform,
+  .arena-floor-disc,
+  .arena-floor-disc::after,
+  .arena-outer-ring,
+  .circle-wrapper::after{
+    animation:none!important;
+  }
+}
