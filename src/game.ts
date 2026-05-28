@@ -63,6 +63,15 @@ type BombPoint = {
   y: number;
 };
 
+type PlayerVisualState =
+  | "idle"
+  | "holdingBomb"
+  | "catchingBomb"
+  | "throwingBomb"
+  | "hit"
+  | "victory"
+  | "defeat";
+
 let db: any = null;
 let ME = { nick: "", id: "", salaId: "", host: false, skinIndex: 0 };
 let salaRef: any = null;
@@ -89,6 +98,8 @@ const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
 const REACTION_SPARKS = REACTION_EMOJIS;
 const DEFAULT_REACTION = REACTION_EMOJIS[0];
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const previousLives = new Map<string, number>();
+const SLOT_COLORS = ["#00d9ff", "#35f06b", "#ffc700", "#d946ff", "#00f5d4", "#ff2d74"];
 
 function emptyRoom(code: string): Room {
   return {
@@ -654,8 +665,84 @@ function startRoomState(room: Room): Room {
   };
 }
 
-function bombTransform(point: BombPoint): string {
-  return `translate(calc(-50% + ${point.x.toFixed(1)}px), calc(-50% + ${point.y.toFixed(1)}px))`;
+function bombScale(): number {
+  return window.innerWidth < 600 ? 0.58 : 0.66;
+}
+
+function bombTransform(point: BombPoint, scale = bombScale()): string {
+  return `translate(calc(-50% + ${point.x.toFixed(1)}px), calc(-50% + ${point.y.toFixed(1)}px)) scale(${scale.toFixed(2)})`;
+}
+
+function handBombPoint(x: number, y: number, isMobile: boolean): BombPoint {
+  const distance = Math.max(1, Math.hypot(x, y));
+  const inwardX = -x / distance;
+  const inwardY = -y / distance;
+  const tangentX = -inwardY;
+  const tangentY = inwardX;
+  const side = x >= 0 ? -1 : 1;
+  const inwardOffset = isMobile ? 44 : 58;
+  const sideOffset = isMobile ? 15 : 24;
+  const lowerOffset = isMobile ? 6 : 10;
+  return {
+    x: x + inwardX * inwardOffset + tangentX * side * sideOffset,
+    y: y + inwardY * inwardOffset + tangentY * side * sideOffset + lowerOffset
+  };
+}
+
+function playerVisualState(
+  player: Player,
+  isTurn: boolean,
+  isThrowingFrom: boolean,
+  isCatchingTo: boolean,
+  lostLife: boolean
+): PlayerVisualState {
+  if (GS.status === "finished" && GS.winnerId === player.id) return "victory";
+  if (player.lives <= 0) return "defeat";
+  if (lostLife) return "hit";
+  if (isThrowingFrom) return "throwingBomb";
+  if (isCatchingTo) return "catchingBomb";
+  if (isTurn) return "holdingBomb";
+  return "idle";
+}
+
+function renderLives(lives: number): string {
+  return [0, 1, 2].map((idx) => (
+    `<span class="life-heart ${idx < lives ? "filled" : "empty"}" aria-hidden="true">&hearts;</span>`
+  )).join("");
+}
+
+function triggerScreenImpact(kind: "boom" | "hit" = "hit") {
+  const game = document.getElementById("scr-game");
+  if (!game || prefersReducedMotion.matches) return;
+  game.classList.remove("screen-impact", "screen-impact-boom");
+  void game.offsetWidth;
+  game.classList.add(kind === "boom" ? "screen-impact-boom" : "screen-impact");
+  window.setTimeout(() => game.classList.remove("screen-impact", "screen-impact-boom"), kind === "boom" ? 620 : 360);
+}
+
+function spawnExplosionFx() {
+  const circle = document.getElementById("players-circle");
+  const bomb = document.getElementById("bomb-el");
+  if (!circle || !bomb || prefersReducedMotion.matches) return;
+  const circleRect = circle.getBoundingClientRect();
+  const bombRect = bomb.getBoundingClientRect();
+  const x = bombRect.left + bombRect.width / 2 - circleRect.left;
+  const y = bombRect.top + bombRect.height / 2 - circleRect.top;
+  const burst = document.createElement("div");
+  burst.className = "explosion-burst";
+  burst.style.left = `${x.toFixed(1)}px`;
+  burst.style.top = `${y.toFixed(1)}px`;
+  for (let i = 0; i < 16; i++) {
+    const spark = document.createElement("span");
+    const angle = (Math.PI * 2 * i) / 16;
+    const distance = 28 + (i % 4) * 12;
+    spark.style.setProperty("--ex", `${(Math.cos(angle) * distance).toFixed(1)}px`);
+    spark.style.setProperty("--ey", `${(Math.sin(angle) * distance).toFixed(1)}px`);
+    spark.style.setProperty("--ed", `${(i % 5) * 0.025}s`);
+    burst.appendChild(spark);
+  }
+  circle.appendChild(burst);
+  window.setTimeout(() => burst.remove(), 900);
 }
 
 function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
@@ -756,7 +843,6 @@ function renderGame() {
   const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
   const previousTurnId = prevTurnId;
   const turnChanged = previousTurnId !== GS.currentTurn;
-  const bombStep = isMobile ? 0.54 : 0.58;
   const bombPoints = new Map<string, BombPoint>();
   const layout = players.map((p, i) => {
     const angle = (360 / count) * i - 90;
@@ -773,13 +859,16 @@ function renderGame() {
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
-  layout.forEach(({ p, angle, x, y }) => {
-    const bombPoint = { x: x * bombStep, y: y * bombStep };
+  layout.forEach(({ p, angle, x, y }, i) => {
+    const bombPoint = handBombPoint(x, y, isMobile);
     const isTurn = p.id === GS.currentTurn;
     const isEliminated = p.lives <= 0;
     const isHost = p.id === GS.hostId;
     const isThrowingFrom = turnChanged && previousTurnId === p.id && !isTurn && !isEliminated;
     const isCatchingTo = turnChanged && Boolean(previousTurnId) && isTurn && !isEliminated;
+    const previousLife = previousLives.get(p.id);
+    const lostLife = previousLife !== undefined && p.lives < previousLife;
+    const visualState = playerVisualState(p, isTurn, isThrowingFrom, isCatchingTo, lostLife);
     const handTarget = isThrowingFrom && activeLayout
       ? { x: activeLayout.x, y: activeLayout.y }
       : isCatchingTo && previousLayout
@@ -810,11 +899,12 @@ function renderGame() {
     const bodySrc = bodyImageSrc(p.skinIndex);
     const bodyFacesLeft = skinIndexOf(p.skinIndex) !== 0;
     const bodyFaceScale = bodyFacesLeft && lookDx > 0 ? -1 : 1;
+    const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
 
     bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
-    slot.className = `p-slot ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
+    slot.className = `p-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
     slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
     slot.style.setProperty("--slot-hop-x", `${hopX.toFixed(1)}px`);
@@ -834,7 +924,9 @@ function renderGame() {
     slot.style.setProperty("--avatar-shoe", palette.shoe);
     slot.style.setProperty("--avatar-skin", palette.skin);
     slot.style.setProperty("--body-face-scale", String(bodyFaceScale));
+    slot.style.setProperty("--slot-color", slotColor);
     slot.dataset.playerId = p.id;
+    slot.dataset.state = visualState;
     
     slot.innerHTML = `
       <div class="p-avatar-wrap ${bodySrc ? "has-body-art" : ""}">
@@ -857,7 +949,7 @@ function renderGame() {
         ${avatarHtml(p.skinIndex)}
       </div>
       <div class="p-name">${esc(p.nick)}</div>
-      <div class="p-lives">${"&hearts;".repeat(p.lives)}</div>
+      <div class="p-lives" aria-label="${p.lives} vidas">${renderLives(p.lives)}</div>
     `;
     circle.appendChild(slot);
     
@@ -866,6 +958,12 @@ function renderGame() {
       arrow.style.transform = `rotate(${angle + 90}deg)`;
       targetBombPoint = bombPoint;
     }
+  });
+
+  const visiblePlayerIds = new Set(players.map((p) => p.id));
+  players.forEach((p) => previousLives.set(p.id, p.lives));
+  Array.from(previousLives.keys()).forEach((id) => {
+    if (!visiblePlayerIds.has(id)) previousLives.delete(id);
   });
 
   if (turnChanged) {
@@ -908,7 +1006,7 @@ function renderQuestion() {
   ops.innerHTML = "";
   q.options.forEach((o) => {
     const btn = document.createElement("button");
-    btn.className = "btn";
+    btn.className = "op-btn";
     btn.textContent = o;
     btn.onclick = () => void submitAnswer(o);
     ops.appendChild(btn);
@@ -971,6 +1069,8 @@ function updateTimer() {
 
 async function handleTimeout() {
   playBoom();
+  triggerScreenImpact("boom");
+  spawnExplosionFx();
   if (localMode && localRoom) {
     const nextState = applyAnswerToRoom(localRoom, GS.currentTurn ?? "", false);
     localRoom = { ...localRoom, ...nextState };
@@ -986,7 +1086,11 @@ async function handleTimeout() {
 async function submitAnswer(ans: string) {
   const isCorrect = ans.toLowerCase() === GS.currentQ?.answer.toLowerCase();
   if (isCorrect) playCorrect();
-  else playBoom();
+  else {
+    playBoom();
+    triggerScreenImpact("hit");
+    spawnExplosionFx();
+  }
 
   if (localMode && localRoom) {
     const nextState = applyAnswerToRoom(localRoom, ME.id, isCorrect);

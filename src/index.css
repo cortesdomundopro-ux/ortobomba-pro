@@ -1928,3 +1928,372 @@ button,input{font:inherit}
     height:54px;
   }
 }
+
+/* Arcade premium pass: stateful characters, hand-held bomb, cleaner arena and lighter effects. */
+#scr-game.screen-impact .circle-wrapper{
+  animation:impactShake .32s cubic-bezier(.2,.9,.15,1) both;
+}
+#scr-game.screen-impact-boom .circle-wrapper{
+  animation:impactShakeBoom .58s cubic-bezier(.2,.9,.15,1) both;
+}
+@keyframes impactShake{
+  0%,100%{transform:translate3d(0,0,0)}
+  20%{transform:translate3d(-4px,2px,0)}
+  40%{transform:translate3d(5px,-2px,0)}
+  65%{transform:translate3d(-2px,1px,0)}
+}
+@keyframes impactShakeBoom{
+  0%,100%{transform:translate3d(0,0,0)}
+  14%{transform:translate3d(-8px,5px,0)}
+  28%{transform:translate3d(9px,-5px,0)}
+  44%{transform:translate3d(-6px,3px,0)}
+  66%{transform:translate3d(4px,-2px,0)}
+}
+
+.game-topbar{
+  background:linear-gradient(180deg,rgba(8,3,18,.94),rgba(7,1,18,.82));
+  border-bottom:1px solid rgba(255,0,122,.28);
+  box-shadow:0 8px 30px rgba(0,0,0,.34),inset 0 -1px 0 rgba(255,255,255,.05);
+}
+.round-badge{
+  padding:6px 18px;
+  border-radius:999px;
+  color:#d9c6ff;
+  background:rgba(255,255,255,.035);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.07),0 0 18px rgba(179,0,255,.14);
+}
+.icon-btn{
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 6px 18px rgba(0,0,0,.26);
+}
+.icon-btn:active,.emoji-btn:active,.op-btn:active{
+  transform:translateY(1px) scale(.97);
+}
+
+.circle-wrapper{
+  perspective:900px;
+  filter:drop-shadow(0 24px 44px rgba(0,0,0,.28));
+}
+.arena-platform{
+  filter:drop-shadow(0 0 28px rgba(255,0,122,.18));
+}
+.arena-floor-disc{
+  width:92%;
+  height:92%;
+  border-radius:22%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  background:
+    radial-gradient(circle at 50% 50%,rgba(255,255,255,.055),transparent 30%),
+    linear-gradient(135deg,rgba(0,217,255,.10),transparent 24% 76%,rgba(255,0,122,.13)),
+    radial-gradient(circle at 50% 45%,rgba(56,13,92,.82),rgba(12,3,28,.92) 72%,rgba(2,0,10,.98));
+  box-shadow:inset 0 0 34px rgba(255,0,122,.16),inset 0 0 90px rgba(0,0,0,.58);
+}
+.arena-floor-disc::before{
+  background-image:
+    linear-gradient(rgba(120,190,255,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,0,122,.06) 1px,transparent 1px);
+  background-size:28px 28px;
+  opacity:.78;
+  mask-image:radial-gradient(circle,black 0 68%,transparent 88%);
+  -webkit-mask-image:radial-gradient(circle,black 0 68%,transparent 88%);
+}
+.arena-floor-disc::after{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:31%;
+  height:31%;
+  transform:translate(-50%,-50%);
+  border-radius:24%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:inset 0 0 18px rgba(0,217,255,.08),0 0 18px rgba(255,0,122,.08);
+  opacity:.72;
+}
+.arena-inner-ring{
+  width:76%;
+  height:76%;
+  border-radius:24%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  border:1px solid rgba(0,217,255,.25);
+  box-shadow:inset 0 0 22px rgba(0,217,255,.07),0 0 22px rgba(179,0,255,.08);
+}
+.arena-outer-ring{
+  inset:-1%;
+  border-radius:20%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  border:3px solid rgba(255,0,122,.88);
+  background:
+    linear-gradient(90deg,rgba(0,217,255,.22),transparent 18% 82%,rgba(255,199,0,.20)),
+    linear-gradient(180deg,rgba(255,0,122,.16),transparent 48%,rgba(0,245,212,.12));
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.9),
+    0 0 20px rgba(255,0,122,.72),
+    0 0 54px rgba(255,0,122,.30),
+    inset 0 0 28px rgba(0,0,0,.68);
+}
+.arena-platform::before{
+  border-radius:20%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  opacity:.82;
+}
+.arena-platform::after{
+  border-radius:21%;
+  clip-path:polygon(22% 0,78% 0,100% 22%,100% 78%,78% 100%,22% 100%,0 78%,0 22%);
+  border-color:rgba(255,255,255,.07);
+}
+.arena-pulse-ring{
+  opacity:.3;
+  border-color:rgba(0,217,255,.22);
+}
+
+.p-slot{
+  align-items:center;
+  transform-origin:50% 78%;
+}
+.p-slot::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:78%;
+  width:84px;
+  height:30px;
+  transform:translateX(-50%) perspective(120px) rotateX(58deg);
+  border-radius:12px;
+  clip-path:polygon(18% 0,82% 0,100% 35%,82% 100%,18% 100%,0 35%);
+  background:linear-gradient(135deg,rgba(255,255,255,.075),rgba(0,0,0,.22));
+  box-shadow:inset 0 0 0 1px var(--slot-color,#ff007a),0 0 14px rgba(255,255,255,.08),0 0 18px var(--slot-color,#ff007a);
+  opacity:.7;
+  z-index:0;
+  pointer-events:none;
+}
+.p-slot.active-turn::before{
+  width:100px;
+  opacity:1;
+  box-shadow:inset 0 0 0 2px var(--slot-color,#ffc700),0 0 26px var(--slot-color,#ffc700);
+}
+.p-avatar-wrap{
+  z-index:3;
+}
+.p-name{
+  padding:2px 7px;
+  border-radius:999px;
+  background:rgba(8,3,18,.68);
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 3px 10px rgba(0,0,0,.28);
+  color:#eee5ff;
+  text-shadow:0 0 8px rgba(255,255,255,.22);
+}
+.p-lives{
+  display:flex;
+  gap:2px;
+  justify-content:center;
+  height:13px;
+  margin-top:2px;
+}
+.life-heart{
+  color:#ff2d74;
+  font-size:12px;
+  line-height:1;
+  filter:drop-shadow(0 0 5px rgba(255,45,116,.55));
+}
+.life-heart.empty{
+  opacity:.25;
+  filter:none;
+}
+.state-defeat{
+  opacity:.42;
+  filter:grayscale(.75) saturate(.7);
+}
+.state-defeat .avatar-photo-stage,
+.state-defeat .avatar-body{
+  animation:playerDefeatPose .72s cubic-bezier(.2,.9,.15,1) both;
+}
+.state-victory .avatar-photo-stage,
+.state-victory .avatar-body{
+  animation:playerVictoryDance .9s ease-in-out infinite;
+}
+.state-hit .avatar-photo-stage,
+.state-hit .avatar-body{
+  animation:playerHitReact .48s cubic-bezier(.2,.9,.15,1) both;
+}
+.state-idle .avatar-photo-stage{
+  animation:playerIdleBreath 2.4s ease-in-out infinite;
+}
+.state-holdingBomb .avatar-photo-stage{
+  animation:playerHoldBomb 1.12s ease-in-out infinite alternate;
+}
+.state-throwingBomb .avatar-photo-stage{
+  animation:playerThrowBodyPro var(--throw-time,940ms) cubic-bezier(.13,.92,.16,1) both;
+}
+.state-catchingBomb .avatar-photo-stage{
+  animation:playerCatchBodyPro var(--throw-time,940ms) cubic-bezier(.13,.92,.16,1) both;
+}
+.has-body-art.p-avatar-wrap.reaction-hit{
+  animation:none!important;
+}
+.has-body-art.p-avatar-wrap.reaction-hit .avatar-photo-stage{
+  animation:reactionBodyPulse .44s ease both!important;
+}
+@keyframes playerIdleBreath{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-3px) scale(1.012)}
+}
+@keyframes playerHoldBomb{
+  from{transform:translateY(-1px) rotate(-1.4deg) scale(1.02)}
+  to{transform:translateY(-5px) rotate(1.4deg) scale(1.045)}
+}
+@keyframes playerThrowBodyPro{
+  0%{transform:translate(0,0) rotate(0deg) scale(1)}
+  18%{transform:translate(calc(0px - var(--slot-hop-x)),6px) rotate(calc(0deg - var(--look-roll))) scale(.97)}
+  42%{transform:translate(var(--slot-hop-x),var(--slot-hop-y)) rotate(var(--look-roll)) scale(1.10)}
+  62%{transform:translate(var(--slot-hop-x),calc(var(--slot-hop-y) + 14px)) rotate(var(--look-roll)) scale(1.04)}
+  82%{transform:translate(calc(0px - var(--slot-hop-x)),3px) rotate(0deg) scale(.99)}
+  100%{transform:translate(0,0) rotate(0deg) scale(1)}
+}
+@keyframes playerCatchBodyPro{
+  0%{transform:translate(calc(0px - var(--slot-hop-x)),6px) rotate(calc(0deg - var(--look-roll))) scale(.96)}
+  32%{transform:translate(var(--slot-hop-x),var(--slot-hop-y)) rotate(var(--look-roll)) scale(1.08)}
+  56%{transform:translate(var(--slot-hop-x),calc(var(--slot-hop-y) + 16px)) rotate(var(--look-roll)) scale(1.04)}
+  78%{transform:translate(0,4px) rotate(0deg) scale(.98)}
+  100%{transform:translate(0,0) rotate(0deg) scale(1)}
+}
+@keyframes playerHitReact{
+  0%{transform:translate(0,0) rotate(0deg) scale(1);filter:brightness(1)}
+  22%{transform:translate(-7px,2px) rotate(-8deg) scale(.96);filter:brightness(1.45) saturate(1.35)}
+  45%{transform:translate(6px,-3px) rotate(7deg) scale(1.04)}
+  70%{transform:translate(-2px,1px) rotate(-2deg) scale(.99)}
+  100%{transform:translate(0,0) rotate(0deg) scale(1);filter:brightness(1)}
+}
+@keyframes playerVictoryDance{
+  0%,100%{transform:translateY(0) rotate(-3deg) scale(1.04)}
+  50%{transform:translateY(-10px) rotate(4deg) scale(1.09)}
+}
+@keyframes playerDefeatPose{
+  0%{transform:translateY(0) rotate(0deg) scale(1)}
+  100%{transform:translateY(14px) rotate(-10deg) scale(.82)}
+}
+@keyframes reactionBodyPulse{
+  0%{transform:translateY(0) scale(1) rotate(0)}
+  45%{transform:translateY(-9px) scale(1.1) rotate(-4deg);filter:brightness(1.22) saturate(1.25)}
+  100%{transform:translateY(0) scale(1) rotate(0)}
+}
+
+#bomb-el{
+  width:86px;
+  transform-origin:50% 50%;
+  filter:drop-shadow(0 10px 14px rgba(0,0,0,.32));
+}
+.bomb-svg-wrap{
+  width:78px;
+  height:78px;
+}
+.led-box{
+  font-size:20px;
+  min-width:62px;
+  padding:1px 9px;
+  letter-spacing:3px;
+  border-color:rgba(255,199,0,.48);
+  box-shadow:0 0 12px rgba(255,199,0,.22),inset 0 0 8px rgba(255,199,0,.07);
+}
+.bomb-svg-wrap::before{
+  content:'';
+  position:absolute;
+  right:-13px;
+  top:-13px;
+  width:46px;
+  height:22px;
+  border-radius:999px;
+  background:radial-gradient(ellipse at 18% 45%,rgba(255,255,255,.38),rgba(150,150,170,.20) 35%,transparent 72%);
+  filter:blur(2px);
+  opacity:.42;
+  transform:rotate(-18deg);
+  animation:fuseSmoke 1.15s ease-in-out infinite;
+}
+#bomb-el.warning .bomb-svg-wrap::before,
+#bomb-el.danger .bomb-svg-wrap::before{
+  opacity:.78;
+  animation-duration:.56s;
+}
+#bomb-el.bomb-throwing::before{
+  height:22px;
+  background:linear-gradient(90deg,rgba(255,199,0,0),rgba(255,199,0,.85) 26%,rgba(255,0,122,.68) 58%,rgba(0,217,255,0));
+  box-shadow:0 0 20px rgba(255,199,0,.32),0 0 34px rgba(255,0,122,.44);
+}
+@keyframes fuseSmoke{
+  0%{transform:translate(0,0) rotate(-18deg) scale(.78);opacity:.18}
+  50%{opacity:.55}
+  100%{transform:translate(-13px,-8px) rotate(-8deg) scale(1.2);opacity:0}
+}
+
+.explosion-burst{
+  position:absolute;
+  width:0;
+  height:0;
+  z-index:80;
+  pointer-events:none;
+}
+.explosion-burst::before{
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  background:radial-gradient(circle,#fff 0 12%,#ffc700 24%,#ff2d74 52%,transparent 72%);
+  transform:translate(-50%,-50%);
+  animation:explosionCore .62s ease-out forwards;
+}
+.explosion-burst span{
+  position:absolute;
+  left:0;
+  top:0;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#fff,#ffc700 45%,#ff2d74);
+  box-shadow:0 0 10px rgba(255,199,0,.9),0 0 20px rgba(255,45,116,.52);
+  animation:explosionParticle .76s var(--ed,0s) ease-out forwards;
+}
+@keyframes explosionCore{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(.25);filter:blur(0)}
+  55%{opacity:.95;transform:translate(-50%,-50%) scale(3.5);filter:blur(2px)}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(5.6);filter:blur(7px)}
+}
+@keyframes explosionParticle{
+  0%{opacity:1;transform:translate(-50%,-50%) scale(.45)}
+  100%{opacity:0;transform:translate(calc(-50% + var(--ex)),calc(-50% + var(--ey))) scale(.1)}
+}
+
+.op-grid{
+  gap:12px;
+}
+.op-btn{
+  min-height:48px;
+  color:#10091b;
+  background:linear-gradient(180deg,#fff,#ececf3);
+  border:1px solid rgba(255,255,255,.65);
+  box-shadow:0 10px 20px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.op-btn:hover:not(:disabled){
+  color:#fff;
+  background:linear-gradient(135deg,#ff007a,#8a00ff);
+  box-shadow:0 10px 26px rgba(255,0,122,.38),0 0 18px rgba(255,0,122,.35);
+}
+
+@media(min-width:1024px){
+  #bomb-el{width:96px}
+  .bomb-svg-wrap{width:88px;height:88px}
+  .led-box{font-size:23px;min-width:70px}
+}
+@media(max-width:600px){
+  .arena-floor-disc::before{background-size:22px 22px}
+  .p-slot::before{width:64px;height:23px}
+  .p-slot.active-turn::before{width:76px}
+  .p-name{padding:1px 5px}
+  .life-heart{font-size:10px}
+  #bomb-el{width:70px}
+  .bomb-svg-wrap{width:64px;height:64px}
+  .led-box{font-size:16px;min-width:52px;padding:1px 7px}
+  .bomb-svg-wrap::before{width:34px;height:17px;right:-8px;top:-9px}
+}
