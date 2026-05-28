@@ -1,4 +1,11 @@
-import { ANIMALS, AVATAR_IMAGES, BODY_IMAGES } from "./animals";
+import {
+  ANIMALS,
+  AVATAR_IMAGES,
+  BODY_IMAGES,
+  CHARACTER_SPRITES,
+  type CharacterSpriteState,
+  type CharacterStateName
+} from "./animals";
 import { Q, type Question } from "./questions";
 
 const FIREBASE_CONFIG = {
@@ -71,14 +78,7 @@ type BombPoint = {
   y: number;
 };
 
-type PlayerVisualState =
-  | "idle"
-  | "holdingBomb"
-  | "catchingBomb"
-  | "throwingBomb"
-  | "hit"
-  | "victory"
-  | "defeat";
+type PlayerVisualState = CharacterStateName;
 
 let db: any = null;
 let ME = { nick: "", id: "", salaId: "", host: false, skinIndex: 0 };
@@ -156,6 +156,11 @@ function avatarHtml(skinIndex: number): string {
 
 function bodyImageSrc(skinIndex: number): string {
   return BODY_IMAGES[skinIndexOf(skinIndex)] ?? "";
+}
+
+function characterSpriteState(skinIndex: number, state: PlayerVisualState): CharacterSpriteState {
+  const spriteSet = CHARACTER_SPRITES[skinIndexOf(skinIndex)] ?? CHARACTER_SPRITES[0];
+  return spriteSet.states[state] ?? spriteSet.states.idle;
 }
 
 function normalizeReactionEmoji(raw: string): string {
@@ -674,7 +679,7 @@ function startRoomState(room: Room): Room {
 }
 
 function bombScale(): number {
-  return window.innerWidth < 600 ? 0.58 : 0.66;
+  return window.innerWidth < 600 ? 0.44 : 0.52;
 }
 
 function bombTransform(point: BombPoint, scale = bombScale()): string {
@@ -688,9 +693,9 @@ function handBombPoint(x: number, y: number, isMobile: boolean): BombPoint {
   const tangentX = -inwardY;
   const tangentY = inwardX;
   const side = x >= 0 ? 1 : -1;
-  const inwardOffset = isMobile ? 10 : 16;
-  const sideOffset = isMobile ? 34 : 52;
-  const lowerOffset = isMobile ? -2 : -4;
+  const inwardOffset = isMobile ? 18 : 26;
+  const sideOffset = isMobile ? 28 : 42;
+  const lowerOffset = isMobile ? 6 : 8;
   return {
     x: x + inwardX * inwardOffset + tangentX * side * sideOffset,
     y: y + inwardY * inwardOffset + tangentY * side * sideOffset + lowerOffset
@@ -705,33 +710,33 @@ type ArenaSlotPoint = {
 const ARENA_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
   1: [{ x: 0.5, y: 0.5 }],
   2: [
-    { x: 0.5, y: 0.24 },
-    { x: 0.5, y: 0.73 }
+    { x: 0.5, y: 0.25 },
+    { x: 0.5, y: 0.68 }
   ],
   3: [
     { x: 0.21, y: 0.29 },
     { x: 0.79, y: 0.29 },
-    { x: 0.5, y: 0.73 }
+    { x: 0.5, y: 0.69 }
   ],
   4: [
     { x: 0.21, y: 0.29 },
     { x: 0.79, y: 0.29 },
-    { x: 0.79, y: 0.73 },
-    { x: 0.21, y: 0.73 }
+    { x: 0.79, y: 0.68 },
+    { x: 0.21, y: 0.68 }
   ],
   5: [
     { x: 0.21, y: 0.29 },
     { x: 0.79, y: 0.29 },
     { x: 0.88, y: 0.53 },
-    { x: 0.5, y: 0.75 },
+    { x: 0.5, y: 0.70 },
     { x: 0.12, y: 0.53 }
   ],
   6: [
     { x: 0.21, y: 0.29 },
     { x: 0.79, y: 0.29 },
     { x: 0.88, y: 0.53 },
-    { x: 0.79, y: 0.73 },
-    { x: 0.21, y: 0.73 },
+    { x: 0.79, y: 0.69 },
+    { x: 0.21, y: 0.69 },
     { x: 0.12, y: 0.53 }
   ]
 };
@@ -739,33 +744,33 @@ const ARENA_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
 const ARENA_MOBILE_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
   1: [{ x: 0.5, y: 0.5 }],
   2: [
-    { x: 0.5, y: 0.25 },
-    { x: 0.5, y: 0.74 }
+    { x: 0.5, y: 0.27 },
+    { x: 0.5, y: 0.66 }
   ],
   3: [
     { x: 0.25, y: 0.27 },
     { x: 0.75, y: 0.27 },
-    { x: 0.5, y: 0.76 }
+    { x: 0.5, y: 0.68 }
   ],
   4: [
     { x: 0.24, y: 0.28 },
     { x: 0.76, y: 0.28 },
-    { x: 0.76, y: 0.75 },
-    { x: 0.24, y: 0.75 }
+    { x: 0.76, y: 0.67 },
+    { x: 0.24, y: 0.67 }
   ],
   5: [
     { x: 0.31, y: 0.25 },
     { x: 0.69, y: 0.25 },
     { x: 0.84, y: 0.53 },
-    { x: 0.5, y: 0.78 },
+    { x: 0.5, y: 0.69 },
     { x: 0.16, y: 0.53 }
   ],
   6: [
     { x: 0.31, y: 0.25 },
     { x: 0.69, y: 0.25 },
     { x: 0.84, y: 0.53 },
-    { x: 0.69, y: 0.78 },
-    { x: 0.31, y: 0.78 },
+    { x: 0.69, y: 0.69 },
+    { x: 0.31, y: 0.69 },
     { x: 0.16, y: 0.53 }
   ]
 };
@@ -999,8 +1004,11 @@ function renderGame() {
     const hopY = Math.sin((aimAngle * Math.PI) / 180) * (isMobile ? 8 : 10) - (isMobile ? 8 : 12);
     const palette = AVATAR_BODY_PALETTES[skinIndexOf(p.skinIndex) % AVATAR_BODY_PALETTES.length];
     const bodySrc = bodyImageSrc(p.skinIndex);
+    const spriteState = characterSpriteState(p.skinIndex, visualState);
+    const useSprite = Boolean(spriteState.src);
     const bodyFacesLeft = skinIndexOf(p.skinIndex) !== 0;
     const bodyFaceScale = bodyFacesLeft && lookDx > 0 ? -1 : 1;
+    const spriteFaceScale = lookDx > 0 ? -1 : 1;
     const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
     const depthT = Math.max(0, Math.min(1, point.y));
     const depthScale = isMobile ? 0.84 + depthT * 0.20 : 0.82 + depthT * 0.27;
@@ -1009,7 +1017,7 @@ function renderGame() {
     bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
-    slot.className = `p-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
+    slot.className = `p-slot state-${visualState} ${useSprite ? "has-character-sprite" : ""} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
     slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
     slot.style.setProperty("--slot-hop-x", `${hopX.toFixed(1)}px`);
@@ -1033,15 +1041,22 @@ function renderGame() {
     slot.style.setProperty("--avatar-skin", palette.skin);
     slot.style.setProperty("--body-face-scale", String(bodyFaceScale));
     slot.style.setProperty("--body-filter", BODY_IMAGE_FILTERS[skinIndexOf(p.skinIndex)] ?? "none");
+    slot.style.setProperty("--sprite-image", `url("${spriteState.src}")`);
+    slot.style.setProperty("--sprite-frames", String(spriteState.frames));
+    slot.style.setProperty("--sprite-duration", `${spriteState.duration}ms`);
+    slot.style.setProperty("--sprite-facing", String(spriteFaceScale));
+    slot.style.setProperty("--sprite-loop-count", spriteState.loop === false ? "1" : "infinite");
     slot.style.setProperty("--slot-color", slotColor);
     slot.dataset.playerId = p.id;
     slot.dataset.state = visualState;
     
     slot.innerHTML = `
-      <div class="p-avatar-wrap ${bodySrc ? "has-body-art" : ""}">
+      <div class="p-avatar-wrap ${useSprite ? "has-sprite-art" : bodySrc ? "has-body-art" : ""}">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
         <span class="avatar-ground" aria-hidden="true"></span>
-        ${bodySrc
+        ${useSprite
+          ? `<span class="character-sprite-stage" aria-hidden="true"><span class="character-sprite"></span></span>`
+          : bodySrc
           ? `<span class="avatar-photo-stage" aria-hidden="true"><img class="avatar-body-art" src="${esc(bodySrc)}" alt="" draggable="false"></span>`
           : `<span class="avatar-body" aria-hidden="true">
               <span class="avatar-neck"></span>
@@ -1089,6 +1104,7 @@ function renderGame() {
           slot.classList.add(`state-${nextState}`);
           slot.dataset.state = nextState;
         });
+        if (GS.status === "playing" && GS.currentTurn === turnAfterPass) renderGame();
       }, BOMB_PASS_MS + 140);
     } else {
       bomb.classList.remove("bomb-throwing", "pass-pop");

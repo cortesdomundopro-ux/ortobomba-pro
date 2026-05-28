@@ -4026,3 +4026,280 @@ button,input{font:inherit}
     transform:translateY(-14px);
   }
 }
+
+/* spritesheet-character-pass: full-body frame animation replaces static pasted cutouts. */
+.p-slot.has-character-sprite{
+  width:128px!important;
+  height:174px!important;
+  transform-origin:50% 92%;
+}
+
+.p-slot.has-character-sprite::before{
+  top:88%;
+  width:92px;
+  height:30px;
+  opacity:.78;
+  background:
+    radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.68),rgba(0,0,0,.24) 52%,transparent 76%),
+    radial-gradient(ellipse at 50% 52%,color-mix(in srgb,var(--slot-color,#ff007a) 45%,transparent),transparent 82%);
+  filter:blur(1px) saturate(1.1);
+}
+
+.p-slot.has-character-sprite.active-turn::before{
+  width:108px;
+  opacity:.96;
+}
+
+.has-sprite-art.p-avatar-wrap{
+  position:relative;
+  width:128px!important;
+  height:146px!important;
+  transform-origin:50% 94%;
+  border-radius:0;
+  background:none!important;
+  box-shadow:none!important;
+  overflow:visible;
+  isolation:isolate;
+}
+
+.has-sprite-art.p-avatar-wrap::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:8px;
+  width:86px;
+  height:112px;
+  transform:translateX(-50%);
+  border-radius:48%;
+  background:
+    radial-gradient(ellipse at 50% 48%,color-mix(in srgb,var(--slot-color,#ff007a) 34%,transparent),transparent 70%),
+    radial-gradient(ellipse at 45% 20%,rgba(0,217,255,.15),transparent 60%),
+    radial-gradient(ellipse at 55% 78%,rgba(255,199,0,.11),transparent 62%);
+  filter:blur(8px) saturate(1.15);
+  opacity:.28;
+  mix-blend-mode:screen;
+  z-index:0;
+  pointer-events:none;
+}
+
+.active-turn .has-sprite-art.p-avatar-wrap::before{
+  opacity:.50;
+  filter:blur(8px) saturate(1.28);
+}
+
+.has-sprite-art .avatar-ground{
+  display:none;
+}
+
+.character-sprite-stage{
+  position:absolute;
+  left:50%;
+  bottom:-1px;
+  width:118px;
+  height:148px;
+  transform:translateX(-50%) scaleX(var(--sprite-facing,1));
+  transform-origin:50% 94%;
+  z-index:2;
+  filter:
+    drop-shadow(0 16px 12px rgba(0,0,0,.54))
+    drop-shadow(0 0 9px color-mix(in srgb,var(--slot-color,#ff007a) 34%,transparent));
+  will-change:transform,filter;
+}
+
+.character-sprite{
+  display:block;
+  width:100%;
+  height:100%;
+  background-image:var(--sprite-image);
+  background-repeat:no-repeat;
+  background-size:800% 100%;
+  background-position:0 0;
+  animation-name:characterSpritePlay;
+  animation-duration:var(--sprite-duration,900ms);
+  animation-timing-function:steps(8);
+  animation-iteration-count:var(--sprite-loop-count,infinite);
+  animation-fill-mode:both;
+}
+
+.state-idle .character-sprite-stage{
+  animation:characterStageBreath 1.8s ease-in-out infinite;
+}
+
+.state-holdingBomb .character-sprite-stage{
+  animation:characterHoldWeight .72s ease-in-out infinite alternate;
+}
+
+.state-throwingBomb .character-sprite-stage,
+.throwing-from .character-sprite-stage{
+  animation:characterThrowBody var(--throw-time,560ms) cubic-bezier(.12,.8,.22,1) both;
+}
+
+.state-catchingBomb .character-sprite-stage,
+.catching-to .character-sprite-stage{
+  animation:characterCatchBody 520ms cubic-bezier(.18,.86,.22,1) both;
+}
+
+.state-hit .character-sprite-stage{
+  animation:characterHitBody 430ms cubic-bezier(.16,.9,.32,1) both;
+}
+
+.state-victory .character-sprite-stage{
+  animation:characterVictoryBody .9s cubic-bezier(.18,.9,.2,1) infinite;
+}
+
+.state-defeat .character-sprite-stage{
+  animation:characterDefeatBody .92s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.has-character-sprite .p-crown{
+  top:-7px;
+  text-shadow:0 0 10px rgba(255,199,0,.9),0 2px 5px rgba(0,0,0,.7);
+}
+
+.has-character-sprite .p-name{
+  margin-top:-8px;
+  max-width:116px;
+  background:linear-gradient(90deg,transparent,rgba(2,6,24,.74),transparent);
+  text-shadow:0 2px 5px rgba(0,0,0,.82),0 0 8px color-mix(in srgb,var(--slot-color,#ff007a) 38%,transparent);
+}
+
+.has-character-sprite .p-lives{
+  margin-top:1px;
+}
+
+.has-character-sprite.eliminated .character-sprite-stage{
+  filter:grayscale(1) brightness(.62) drop-shadow(0 10px 8px rgba(0,0,0,.46));
+}
+
+.p-avatar-wrap.panic .character-sprite-stage{
+  animation:characterPanicBody .20s infinite alternate ease-in-out;
+}
+
+.p-avatar-wrap.reaction-hit .character-sprite-stage{
+  animation:characterReactionPop .42s cubic-bezier(.16,.9,.22,1);
+}
+
+#bomb-el{
+  filter:
+    drop-shadow(0 11px 10px rgba(0,0,0,.48))
+    drop-shadow(0 0 11px rgba(255,199,0,.20))
+    drop-shadow(0 0 16px rgba(255,0,122,.18));
+}
+
+#bomb-el.bomb-throwing{
+  filter:
+    drop-shadow(0 18px 18px rgba(0,0,0,.48))
+    drop-shadow(0 0 18px rgba(255,199,0,.42))
+    drop-shadow(0 0 32px rgba(255,0,122,.28));
+}
+
+@keyframes characterSpritePlay{
+  from{background-position-x:0}
+  to{background-position-x:100%}
+}
+
+@keyframes characterStageBreath{
+  0%,100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translateY(0)}
+  50%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translateY(-2px)}
+}
+
+@keyframes characterHoldWeight{
+  from{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-1px,0) rotate(-1deg)}
+  to{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(2px,-2px) rotate(1deg)}
+}
+
+@keyframes characterThrowBody{
+  0%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-5px,2px) rotate(-6deg)}
+  26%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-12px,3px) rotate(-12deg)}
+  54%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(13px,-12px) rotate(13deg)}
+  76%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(8px,-5px) rotate(7deg)}
+  100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(0,0) rotate(0)}
+}
+
+@keyframes characterCatchBody{
+  0%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-7px,1px) rotate(-6deg)}
+  48%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(11px,-9px) rotate(8deg)}
+  76%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(3px,1px) rotate(2deg)}
+  100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(0,0) rotate(0)}
+}
+
+@keyframes characterHitBody{
+  0%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(0,0)}
+  20%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-10px,0) rotate(-7deg)}
+  42%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(9px,-2px) rotate(7deg)}
+  70%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-4px,0) rotate(-3deg)}
+  100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(0,0)}
+}
+
+@keyframes characterVictoryBody{
+  0%,100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translateY(0) rotate(0)}
+  32%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translateY(-10px) rotate(-5deg)}
+  64%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translateY(-4px) rotate(5deg)}
+}
+
+@keyframes characterDefeatBody{
+  0%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(0,0) rotate(0);opacity:1}
+  72%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(8px,22px) rotate(22deg);opacity:.92}
+  100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(12px,30px) rotate(34deg);opacity:.82}
+}
+
+@keyframes characterPanicBody{
+  from{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(-2px,0) rotate(-1deg)}
+  to{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) translate(2px,-2px) rotate(1deg)}
+}
+
+@keyframes characterReactionPop{
+  0%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) scale(1)}
+  45%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) scale(1.12) translateY(-5px)}
+  100%{transform:translateX(-50%) scaleX(var(--sprite-facing,1)) scale(1)}
+}
+
+@media(max-width:600px){
+  .p-slot.has-character-sprite{
+    width:90px!important;
+    height:130px!important;
+  }
+
+  .has-sprite-art.p-avatar-wrap{
+    width:90px!important;
+    height:108px!important;
+  }
+
+  .has-sprite-art.p-avatar-wrap::before{
+    width:60px;
+    height:78px;
+    bottom:6px;
+    filter:blur(6px) saturate(1.12);
+  }
+
+  .character-sprite-stage{
+    width:82px;
+    height:103px;
+    bottom:0;
+  }
+
+  .p-slot.has-character-sprite::before{
+    width:66px;
+    height:22px;
+    top:86%;
+  }
+
+  .p-slot.has-character-sprite.active-turn::before{
+    width:76px;
+  }
+
+  .has-character-sprite .p-crown{
+    top:-3px;
+  }
+
+  .has-character-sprite .p-name{
+    margin-top:-5px;
+    max-width:82px;
+    font-size:8px;
+  }
+
+  .has-character-sprite .p-lives{
+    font-size:9px;
+    margin-top:0;
+  }
+}

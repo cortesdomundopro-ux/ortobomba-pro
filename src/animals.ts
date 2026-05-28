@@ -24,3 +24,49 @@ export const BODY_IMAGES = [
   "/characters/kid-0.png",
   "/characters/kid-3.png"
 ];
+
+export const CHARACTER_STATE_NAMES = [
+  "idle",
+  "holdingBomb",
+  "catchingBomb",
+  "throwingBomb",
+  "hit",
+  "victory",
+  "defeat"
+] as const;
+
+export type CharacterStateName = typeof CHARACTER_STATE_NAMES[number];
+
+export type CharacterSpriteState = {
+  src: string;
+  frames: number;
+  duration: number;
+  loop?: boolean;
+};
+
+export type CharacterSpriteSet = {
+  id: string;
+  states: Record<CharacterStateName, CharacterSpriteState>;
+};
+
+function characterStates(id: string): Record<CharacterStateName, CharacterSpriteState> {
+  const base = `/characters/sprites/${id}`;
+  return {
+    idle: { src: `${base}/idle.png`, frames: 8, duration: 980 },
+    holdingBomb: { src: `${base}/holdingBomb.png`, frames: 8, duration: 720 },
+    catchingBomb: { src: `${base}/catchingBomb.png`, frames: 8, duration: 520, loop: false },
+    throwingBomb: { src: `${base}/throwingBomb.png`, frames: 8, duration: 560, loop: false },
+    hit: { src: `${base}/hit.png`, frames: 8, duration: 430, loop: false },
+    victory: { src: `${base}/victory.png`, frames: 8, duration: 760 },
+    defeat: { src: `${base}/defeat.png`, frames: 8, duration: 920, loop: false }
+  };
+}
+
+export const CHARACTER_SPRITES: CharacterSpriteSet[] = [
+  { id: "kid-0", states: characterStates("kid-0") },
+  { id: "kid-1", states: characterStates("kid-1") },
+  { id: "kid-2", states: characterStates("kid-2") },
+  { id: "kid-3", states: characterStates("kid-3") },
+  { id: "kid-1", states: characterStates("kid-1") },
+  { id: "kid-3", states: characterStates("kid-3") }
+];
