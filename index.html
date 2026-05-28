@@ -59,10 +59,12 @@
   <div class="arena-wrap">
     <div class="circle-wrapper" id="players-circle">
       <div id="turn-arrow"></div>
-      <div class="clean-playfield" aria-hidden="true">
-        <span class="clean-playfield-grid"></span>
-        <span class="clean-playfield-ring"></span>
-        <span class="clean-playfield-center"></span>
+      <div class="arena-image-stage" aria-hidden="true">
+        <img class="arena-base-art" src="/arena/ortobomba-arena-main.png" alt="">
+      </div>
+      <div class="arena-status-panel" aria-live="polite">
+        <div class="arena-time" id="arena-time-val">10</div>
+        <div class="arena-round">RODADA <span id="arena-round-val">1</span></div>
       </div>
       <div id="bomb-el">
         <div class="bomb-glow-halo"></div>

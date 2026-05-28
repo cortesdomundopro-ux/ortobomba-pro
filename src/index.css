@@ -322,60 +322,74 @@ button {
 
 .circle-wrapper {
   position: relative;
-  width: var(--arena-stage-width, min(86vw, 860px));
-  height: var(--arena-stage-height, calc(min(86vw, 860px) * 0.74));
+  width: var(--arena-stage-width, min(92vw, 1180px));
+  height: var(--arena-stage-height, calc(min(92vw, 1180px) * 0.8));
   max-width: 100%;
   margin: 0 auto;
 }
 
-.clean-playfield {
+.arena-image-stage {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 26px;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.06), transparent 20%),
-    radial-gradient(circle at 18% 30%, rgba(0, 217, 255, 0.12), transparent 30%),
-    radial-gradient(circle at 82% 30%, rgba(255, 45, 143, 0.12), transparent 30%),
-    linear-gradient(180deg, rgba(15, 15, 44, 0.86), rgba(8, 8, 28, 0.94));
-  box-shadow: inset 0 -30px 58px rgba(0, 0, 0, 0.36), 0 20px 48px rgba(0, 0, 0, 0.42);
+  border-radius: 18px;
+  background: #02030a;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
 }
 
-.clean-playfield-grid {
+.arena-image-stage::after {
+  content: "";
   position: absolute;
   inset: 0;
-  opacity: 0.6;
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-  background-size: 42px 42px;
-  mask-image: radial-gradient(ellipse at 50% 50%, black 42%, transparent 78%);
-  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 42%, transparent 78%);
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 46%, transparent 42%, rgba(0, 0, 0, 0.18) 76%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(0, 0, 0, 0.10));
 }
 
-.clean-playfield-ring {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 56%;
-  aspect-ratio: 1;
-  transform: translate(-50%, -50%);
-  border: 2px solid rgba(255, 255, 255, 0.11);
-  border-radius: 999px;
-  box-shadow: 0 0 24px rgba(255, 45, 143, 0.12), inset 0 0 24px rgba(0, 217, 255, 0.08);
+.arena-base-art {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: fill;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
-.clean-playfield-center {
+.arena-status-panel {
   position: absolute;
+  z-index: 82;
   left: 50%;
-  top: 50%;
-  width: 66px;
-  height: 66px;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.045);
+  top: 9.6%;
+  min-width: 126px;
+  transform: translateX(-50%);
+  padding: 6px 12px 7px;
+  border: 1px solid rgba(0, 217, 255, 0.28);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(3, 7, 18, 0.74), rgba(3, 4, 12, 0.9));
+  box-shadow: 0 0 18px rgba(0, 217, 255, 0.16), inset 0 0 12px rgba(255, 45, 143, 0.08);
+  text-align: center;
+  pointer-events: none;
+}
+
+.arena-time {
+  color: #fff;
+  font: 900 24px "Orbitron", monospace;
+  letter-spacing: 3px;
+  line-height: 1;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.36), 0 0 20px rgba(0, 217, 255, 0.26);
+}
+
+.arena-time.danger {
+  color: var(--danger);
+  text-shadow: 0 0 12px rgba(255, 48, 77, 0.72);
+}
+
+.arena-round {
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.76);
+  font: 900 9px "Orbitron", monospace;
+  letter-spacing: 1px;
 }
 
 #turn-arrow {
@@ -388,75 +402,60 @@ button {
   top: 50%;
 }
 
-.p-slot.emoji-slot {
-  width: 112px;
-  height: 124px;
+.p-slot.arena-slot {
+  width: 156px;
+  height: 74px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   transform-origin: 50% 78%;
+  pointer-events: none;
 }
 
-.p-slot.emoji-slot::before {
+.p-slot.arena-slot::before {
   content: "";
   position: absolute;
   left: 50%;
-  top: 72%;
+  bottom: 10px;
   z-index: -1;
-  width: 70px;
-  height: 18px;
+  width: 96px;
+  height: 30px;
   transform: translateX(-50%);
   border-radius: 999px;
-  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.55), transparent 72%);
-  opacity: 0.76;
+  background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--slot-color, #00d9ff) 34%, transparent), transparent 72%);
+  opacity: 0.28;
+  filter: blur(1px);
 }
 
-.emoji-player-card {
+.p-slot.arena-slot.active-turn::before {
+  opacity: 0.82;
+  background: radial-gradient(ellipse at 50% 50%, rgba(255, 199, 0, 0.65), rgba(255, 199, 0, 0.18) 42%, transparent 76%);
+  animation: arenaSlotPulse 0.82s ease-in-out infinite alternate;
+}
+
+.arena-player-marker {
   position: relative;
-  width: 82px;
-  height: 82px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid color-mix(in srgb, var(--slot-color, #00d9ff) 72%, white 12%);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.24), transparent 35%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.035));
-  box-shadow:
-    0 10px 22px rgba(0, 0, 0, 0.32),
-    0 0 18px color-mix(in srgb, var(--slot-color, #00d9ff) 38%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  animation: emojiIdle 1.85s ease-in-out infinite;
+  width: 1px;
+  height: 1px;
+  transform-origin: center bottom;
 }
 
-.emoji-player-face {
-  font-size: 42px;
-  line-height: 1;
-  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.34));
+.arena-player-marker.panic {
+  animation: labelPanic 0.16s infinite alternate ease-in-out;
 }
 
-.active-turn .emoji-player-card {
-  border-color: var(--gold);
-  box-shadow:
-    0 0 0 5px rgba(255, 199, 0, 0.18),
-    0 0 28px rgba(255, 199, 0, 0.45),
-    0 12px 26px rgba(0, 0, 0, 0.38);
-  animation: emojiHolding 0.72s ease-in-out infinite alternate;
+.arena-player-marker.reaction-hit {
+  animation: labelPop 0.42s cubic-bezier(0.16, 0.9, 0.22, 1);
 }
 
-.throwing-from .emoji-player-card { animation: emojiThrow var(--throw-time, 940ms) cubic-bezier(0.15, 0.9, 0.18, 1) both; }
-.catching-to .emoji-player-card { animation: emojiCatch var(--throw-time, 940ms) cubic-bezier(0.15, 0.9, 0.18, 1) both; }
-.state-hit .emoji-player-card { animation: emojiHit 0.42s cubic-bezier(0.2, 0.9, 0.15, 1) both; }
-.state-victory .emoji-player-card { animation: emojiVictory 0.72s ease-in-out infinite; }
-.state-defeat .emoji-player-card { animation: emojiDefeat 0.7s ease both; opacity: 0.45; }
-.emoji-player-card.panic { animation: emojiPanic 0.16s infinite alternate ease-in-out; }
-.emoji-player-card.reaction-hit { animation: emojiReaction 0.42s cubic-bezier(0.16, 0.9, 0.22, 1); }
+.arena-player-dot {
+  display: none;
+}
 
-.emoji-slot .p-crown {
+.arena-slot .p-crown {
   position: absolute;
-  top: -18px;
+  top: -52px;
   left: 50%;
   transform: translateX(-50%);
   color: var(--gold);
@@ -464,26 +463,29 @@ button {
   filter: drop-shadow(0 0 8px rgba(255, 199, 0, 0.75));
 }
 
-.emoji-slot .p-name {
-  max-width: 112px;
+.arena-slot .p-name {
+  max-width: 138px;
   margin-top: 6px;
-  padding: 2px 8px;
+  padding: 3px 10px;
   overflow: hidden;
   color: #fff;
-  background: rgba(0, 0, 0, 0.34);
+  border: 1px solid color-mix(in srgb, var(--slot-color, #00d9ff) 45%, transparent);
+  background: rgba(0, 0, 0, 0.58);
   border-radius: 999px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 900;
   letter-spacing: 0.7px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.34), 0 0 12px color-mix(in srgb, var(--slot-color, #00d9ff) 26%, transparent);
   text-overflow: ellipsis;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.82);
   white-space: nowrap;
 }
 
-.emoji-slot .p-lives {
+.arena-slot .p-lives {
   margin-top: 3px;
   font-size: 12px;
   line-height: 1;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.65));
 }
 
 .life-heart.filled {
@@ -844,53 +846,19 @@ button {
   font-weight: 900;
 }
 
-@keyframes emojiIdle {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-4px) scale(1.03); }
+@keyframes arenaSlotPulse {
+  from { transform: translateX(-50%) scale(0.95); opacity: 0.48; }
+  to { transform: translateX(-50%) scale(1.12); opacity: 0.9; }
 }
 
-@keyframes emojiHolding {
-  from { transform: translateY(-2px) scale(1.08) rotate(-2deg); }
-  to { transform: translateY(-7px) scale(1.13) rotate(2deg); }
+@keyframes labelPanic {
+  from { transform: translateX(-2px) rotate(-2deg); }
+  to { transform: translate(2px, -1px) rotate(2deg); }
 }
 
-@keyframes emojiThrow {
-  0% { transform: translateY(0) scale(1) rotate(0); }
-  28% { transform: translateY(7px) scale(0.94) rotate(-8deg); }
-  62% { transform: translateY(-15px) scale(1.18) rotate(12deg); }
-  100% { transform: translateY(0) scale(1) rotate(0); }
-}
-
-@keyframes emojiCatch {
-  0% { transform: translateY(5px) scale(0.94); }
-  55% { transform: translateY(-14px) scale(1.2); }
-  100% { transform: translateY(0) scale(1); }
-}
-
-@keyframes emojiHit {
-  0%, 100% { transform: translateX(0) rotate(0); }
-  25% { transform: translateX(-9px) rotate(-8deg); }
-  55% { transform: translateX(8px) rotate(8deg); }
-  78% { transform: translateX(-4px) rotate(-3deg); }
-}
-
-@keyframes emojiVictory {
-  0%, 100% { transform: translateY(0) scale(1) rotate(0); }
-  50% { transform: translateY(-13px) scale(1.12) rotate(5deg); }
-}
-
-@keyframes emojiDefeat {
-  to { transform: translateY(14px) scale(0.72) rotate(14deg); }
-}
-
-@keyframes emojiPanic {
-  from { transform: translate(-2px, 0) rotate(-4deg) scale(1.08); }
-  to { transform: translate(2px, -2px) rotate(4deg) scale(1.12); }
-}
-
-@keyframes emojiReaction {
+@keyframes labelPop {
   0%, 100% { transform: scale(1); }
-  45% { transform: translateY(-7px) scale(1.18); }
+  45% { transform: translateY(-5px) scale(1.12); }
 }
 
 @keyframes bombPulse {
@@ -952,30 +920,52 @@ button {
     height: var(--arena-stage-height, 66vw);
   }
 
-  .clean-playfield {
-    border-radius: 22px;
+  .arena-image-stage {
+    border-radius: 14px;
   }
 
-  .p-slot.emoji-slot {
-    width: 86px;
-    height: 100px;
+  .arena-status-panel {
+    top: 9.2%;
+    min-width: 74px;
+    padding: 4px 7px 5px;
+    border-radius: 7px;
   }
 
-  .emoji-player-card {
+  .arena-time {
+    font-size: 14px;
+    letter-spacing: 1.6px;
+  }
+
+  .arena-round {
+    margin-top: 2px;
+    font-size: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .p-slot.arena-slot {
+    width: 96px;
+    height: 58px;
+  }
+
+  .p-slot.arena-slot::before {
     width: 64px;
-    height: 64px;
+    height: 22px;
+    bottom: 7px;
   }
 
-  .emoji-player-face {
-    font-size: 32px;
+  .arena-slot .p-crown {
+    top: -42px;
+    font-size: 9px;
   }
 
-  .emoji-slot .p-name {
-    max-width: 82px;
+  .arena-slot .p-name {
+    max-width: 92px;
+    padding: 2px 7px;
     font-size: 8px;
+    letter-spacing: 0.45px;
   }
 
-  .emoji-slot .p-lives {
+  .arena-slot .p-lives {
     font-size: 10px;
   }
 

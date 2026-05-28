@@ -645,23 +645,11 @@ function startRoomState(room: Room): Room {
 }
 
 function bombScale(): number {
-  return window.innerWidth < 600 ? 0.46 : 0.58;
+  return window.innerWidth < 600 ? 0.34 : 0.44;
 }
 
 function bombTransform(point: BombPoint, scale = bombScale()): string {
   return `translate(calc(-50% + ${point.x.toFixed(1)}px), calc(-50% + ${point.y.toFixed(1)}px)) scale(${scale.toFixed(2)})`;
-}
-
-function handBombPoint(x: number, y: number, isMobile: boolean): BombPoint {
-  const distance = Math.max(1, Math.hypot(x, y));
-  const inwardX = -x / distance;
-  const inwardY = -y / distance;
-  const inwardOffset = isMobile ? 34 : 52;
-  const liftOffset = isMobile ? 8 : 10;
-  return {
-    x: x + inwardX * inwardOffset,
-    y: y + inwardY * inwardOffset - liftOffset
-  };
 }
 
 type ArenaSlotPoint = {
@@ -672,87 +660,88 @@ type ArenaSlotPoint = {
 const ARENA_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
   1: [{ x: 0.5, y: 0.5 }],
   2: [
-    { x: 0.5, y: 0.25 },
-    { x: 0.5, y: 0.68 }
+    { x: 0.20, y: 0.31 },
+    { x: 0.80, y: 0.31 }
   ],
   3: [
-    { x: 0.21, y: 0.29 },
-    { x: 0.79, y: 0.29 },
-    { x: 0.5, y: 0.69 }
+    { x: 0.20, y: 0.31 },
+    { x: 0.80, y: 0.31 },
+    { x: 0.23, y: 0.70 }
   ],
   4: [
-    { x: 0.21, y: 0.29 },
-    { x: 0.79, y: 0.29 },
-    { x: 0.79, y: 0.68 },
-    { x: 0.21, y: 0.68 }
-  ],
-  5: [
-    { x: 0.21, y: 0.29 },
-    { x: 0.79, y: 0.29 },
-    { x: 0.88, y: 0.53 },
-    { x: 0.5, y: 0.70 },
-    { x: 0.12, y: 0.53 }
-  ],
-  6: [
-    { x: 0.21, y: 0.29 },
-    { x: 0.79, y: 0.29 },
-    { x: 0.88, y: 0.53 },
-    { x: 0.79, y: 0.69 },
-    { x: 0.21, y: 0.69 },
-    { x: 0.12, y: 0.53 }
+    { x: 0.20, y: 0.31 },
+    { x: 0.80, y: 0.31 },
+    { x: 0.23, y: 0.70 },
+    { x: 0.78, y: 0.69 }
   ]
 };
 
 const ARENA_MOBILE_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
   1: [{ x: 0.5, y: 0.5 }],
   2: [
-    { x: 0.5, y: 0.27 },
-    { x: 0.5, y: 0.66 }
+    { x: 0.22, y: 0.31 },
+    { x: 0.78, y: 0.31 }
   ],
   3: [
-    { x: 0.25, y: 0.27 },
-    { x: 0.75, y: 0.27 },
-    { x: 0.5, y: 0.68 }
+    { x: 0.22, y: 0.31 },
+    { x: 0.78, y: 0.31 },
+    { x: 0.24, y: 0.70 }
   ],
   4: [
-    { x: 0.24, y: 0.28 },
-    { x: 0.76, y: 0.28 },
-    { x: 0.76, y: 0.67 },
-    { x: 0.24, y: 0.67 }
+    { x: 0.22, y: 0.31 },
+    { x: 0.78, y: 0.31 },
+    { x: 0.24, y: 0.70 },
+    { x: 0.78, y: 0.69 }
+  ]
+};
+
+const ARENA_BOMB_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
+  1: [{ x: 0.5, y: 0.5 }],
+  2: [
+    { x: 0.18, y: 0.20 },
+    { x: 0.76, y: 0.20 }
   ],
-  5: [
-    { x: 0.31, y: 0.25 },
-    { x: 0.69, y: 0.25 },
-    { x: 0.84, y: 0.53 },
-    { x: 0.5, y: 0.69 },
-    { x: 0.16, y: 0.53 }
+  3: [
+    { x: 0.18, y: 0.20 },
+    { x: 0.76, y: 0.20 },
+    { x: 0.25, y: 0.69 }
   ],
-  6: [
-    { x: 0.31, y: 0.25 },
-    { x: 0.69, y: 0.25 },
-    { x: 0.84, y: 0.53 },
-    { x: 0.69, y: 0.69 },
-    { x: 0.31, y: 0.69 },
-    { x: 0.16, y: 0.53 }
+  4: [
+    { x: 0.18, y: 0.20 },
+    { x: 0.76, y: 0.20 },
+    { x: 0.25, y: 0.69 },
+    { x: 0.75, y: 0.69 }
   ]
 };
 
 function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   const vw = Math.max(320, window.innerWidth || 320);
   const vh = Math.max(520, window.innerHeight || 720);
-  const reservedHeight = isMobile ? 330 : 260;
-  const maxWidthByHeight = Math.max(isMobile ? 320 : 620, (vh - reservedHeight) * 1.28);
-  const maxWidthByViewport = vw * (isMobile ? 0.96 : 0.78);
-  const maxWidth = isMobile ? 390 : 860;
-  const minWidth = isMobile ? Math.min(vw * 0.90, 340) : Math.min(vw * 0.62, 620);
+  const reservedHeight = isMobile ? 350 : 250;
+  const maxWidthByHeight = Math.max(isMobile ? 320 : 720, (vh - reservedHeight) * 1.25);
+  const maxWidthByViewport = vw * (isMobile ? 0.98 : 0.92);
+  const maxWidth = isMobile ? 460 : 1180;
+  const minWidth = isMobile ? Math.min(vw * 0.94, 380) : Math.min(vw * 0.76, 820);
   const width = Math.round(Math.max(minWidth, Math.min(maxWidth, maxWidthByViewport, maxWidthByHeight)));
-  return { width, height: Math.round(width * 0.74) };
+  return { width, height: Math.round(width * 0.8) };
 }
 
 function arenaSlotLayout(count: number, isMobile: boolean): ArenaSlotPoint[] {
   const normalized = Math.max(1, Math.min(MAX_PLAYERS, count || 1));
   const layouts = isMobile ? ARENA_MOBILE_SLOT_LAYOUTS : ARENA_SLOT_LAYOUTS;
   return layouts[normalized] ?? layouts[MAX_PLAYERS];
+}
+
+function arenaBombLayout(count: number): ArenaSlotPoint[] {
+  const normalized = Math.max(1, Math.min(MAX_PLAYERS, count || 1));
+  return ARENA_BOMB_SLOT_LAYOUTS[normalized] ?? ARENA_BOMB_SLOT_LAYOUTS[MAX_PLAYERS];
+}
+
+function pointToBomb(stage: { width: number; height: number }, point: ArenaSlotPoint): BombPoint {
+  return {
+    x: (point.x - 0.5) * stage.width,
+    y: (point.y - 0.5) * stage.height
+  };
 }
 
 function playerVisualState(
@@ -909,12 +898,14 @@ function renderGame() {
   const turnChanged = previousTurnId !== GS.currentTurn;
   const bombPoints = new Map<string, BombPoint>();
   const slotLayout = arenaSlotLayout(count, isMobile);
+  const bombLayout = arenaBombLayout(count);
   const layout = players.map((p, i) => {
     const point = slotLayout[i % slotLayout.length];
     const x = (point.x - 0.5) * stage.width;
     const y = (point.y - 0.5) * stage.height;
     const angle = Math.atan2(y, x) * 180 / Math.PI;
-    return { p, point, angle, x, y };
+    const bombPoint = pointToBomb(stage, bombLayout[i % bombLayout.length]);
+    return { p, point, angle, x, y, bombPoint };
   });
   const activeLayout = layout.find((item) => item.p.id === GS.currentTurn);
   const previousLayout = layout.find((item) => item.p.id === previousTurnId);
@@ -926,10 +917,10 @@ function renderGame() {
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
   arrow.style.display = "none";
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
+  el<HTMLSpanElement>("arena-round-val").textContent = String(GS.roundCount || 1);
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
-  layout.forEach(({ p, point, angle, x, y }, i) => {
-    const bombPoint = handBombPoint(x, y, isMobile);
+  layout.forEach(({ p, point, angle, x, y, bombPoint }, i) => {
     const isTurn = p.id === GS.currentTurn;
     const isEliminated = p.lives <= 0;
     const isHost = p.id === GS.hostId;
@@ -940,13 +931,13 @@ function renderGame() {
     const visualState = playerVisualState(p, isTurn, isThrowingFrom, isCatchingTo, lostLife);
     const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
     const depthT = Math.max(0, Math.min(1, point.y));
-    const depthScale = isMobile ? 0.96 + depthT * 0.12 : 0.92 + depthT * 0.16;
+    const depthScale = isMobile ? 0.88 + depthT * 0.10 : 0.90 + depthT * 0.14;
     const depthZ = 40 + Math.round(depthT * 90) + (isTurn ? 24 : 0);
 
     bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
-    slot.className = `p-slot emoji-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
+    slot.className = `p-slot arena-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
     slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
     slot.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${depthScale.toFixed(3)})`;
@@ -956,12 +947,10 @@ function renderGame() {
     slot.style.setProperty("--slot-color", slotColor);
     slot.dataset.playerId = p.id;
     slot.dataset.state = visualState;
-    const playerEmoji = PLAYER_EMOJIS[skinIndexOf(p.skinIndex)];
-    
     slot.innerHTML = `
-      <div class="emoji-player-card">
+      <div class="arena-player-marker">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
-        <div class="emoji-player-face" aria-hidden="true">${playerEmoji}</div>
+        <span class="arena-player-dot" aria-hidden="true"></span>
       </div>
       <div class="p-name">${esc(p.nick)}</div>
       <div class="p-lives" aria-label="${p.lives} vidas">${renderLives(p.lives)}</div>
@@ -1053,7 +1042,8 @@ function stopTimer() {
   bomb?.classList.remove("warning", "danger");
   setBombFuseProgress(1);
   document.getElementById("bomb-timer")?.classList.remove("danger");
-  document.querySelectorAll(".p-avatar-wrap, .emoji-player-card").forEach((av) => av.classList.remove("panic"));
+  document.getElementById("arena-time-val")?.classList.remove("danger");
+  document.querySelectorAll(".arena-player-marker").forEach((av) => av.classList.remove("panic"));
 }
 
 function updateTimer() {
@@ -1066,18 +1056,20 @@ function updateTimer() {
   
   const timer = el<HTMLDivElement>("bomb-timer");
   timer.textContent = String(remaining).padStart(2, "0");
+  el<HTMLDivElement>("arena-time-val").textContent = String(remaining).padStart(2, "0");
   const isDanger = remaining <= 3 && remaining > 0;
   const isWarning = remaining <= 5 && remaining > 3;
   timer.classList.toggle("danger", isDanger);
+  el<HTMLDivElement>("arena-time-val").classList.toggle("danger", isDanger);
   const bomb = el<HTMLDivElement>("bomb-el");
   bomb.classList.toggle("danger", isDanger);
   bomb.classList.toggle("warning", isWarning);
   setBombFuseProgress(fuseRatio);
   
   if (remaining <= 3 && remaining > 0) {
-    document.querySelectorAll(".p-avatar-wrap, .emoji-player-card").forEach(av => av.classList.add("panic"));
+    document.querySelectorAll(".arena-player-marker").forEach(av => av.classList.add("panic"));
   } else {
-    document.querySelectorAll(".p-avatar-wrap, .emoji-player-card").forEach(av => av.classList.remove("panic"));
+    document.querySelectorAll(".arena-player-marker").forEach(av => av.classList.remove("panic"));
   }
 
   if (remaining <= 5 && remaining > 0 && Math.floor(elapsed * 10) % 10 === 0) {
@@ -1223,7 +1215,7 @@ function showReaction(playerId: string, emoji: string) {
   pop.setAttribute("aria-hidden", "true");
   slot.appendChild(pop);
 
-  const avatar = slot.querySelector<HTMLElement>(".p-avatar-wrap, .emoji-player-card");
+  const avatar = slot.querySelector<HTMLElement>(".arena-player-marker");
   if (avatar) {
     avatar.classList.remove("reaction-hit");
     void avatar.offsetWidth;
