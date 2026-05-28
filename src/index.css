@@ -1110,58 +1110,6 @@ button,input{font:inherit}
   }
 }
 
-.throw-arm{
-  position:absolute;
-  display:none;
-  left:50%;
-  top:54%;
-  width:42px;
-  height:13px;
-  border:1px solid rgba(255,255,255,.34);
-  border-radius:999px;
-  background:linear-gradient(90deg,#d38772 0%,#ffc4aa 54%,#ffddca 100%);
-  box-shadow:0 4px 9px rgba(0,0,0,.34),inset -5px 0 8px rgba(130,54,44,.2);
-  opacity:.72;
-  pointer-events:none;
-  transform-origin:7px 50%;
-  z-index:1;
-}
-.throw-arm::after{
-  content:'';
-  position:absolute;
-  right:-7px;
-  top:50%;
-  width:16px;
-  height:17px;
-  border:1px solid rgba(255,255,255,.36);
-  border-radius:50% 50% 46% 46%;
-  background:radial-gradient(circle at 38% 28%,#ffe4d4 0 28%,#ffc0a3 61%,#d98b72 100%);
-  box-shadow:inset -3px -2px 5px rgba(132,58,48,.18);
-  transform:translateY(-50%);
-}
-.throw-arm-a{
-  transform:rotate(var(--aim-angle,0deg)) translateX(23px) translateY(-9px) rotate(-9deg);
-}
-.throw-arm-b{
-  width:34px;
-  opacity:.56;
-  transform:rotate(var(--aim-angle,0deg)) translateX(18px) translateY(10px) rotate(11deg);
-}
-.active-turn .throw-arm{
-  width:52px;
-  opacity:.96;
-  animation:throwArmPulse .58s ease-in-out infinite alternate;
-}
-.active-turn .throw-arm-b{
-  width:43px;
-}
-.p-avatar-wrap.panic .throw-arm{
-  animation:throwArmShake .1s infinite alternate ease-in-out;
-}
-.active-turn .p-avatar-wrap.panic .throw-arm{
-  animation:throwArmPulse .58s ease-in-out infinite alternate,throwArmShake .1s infinite alternate ease-in-out;
-}
-
 @keyframes avatarArtPanic{
   from{transform:translate(-50%,-50%) translate(-3px,1px) perspective(180px) rotateX(var(--look-x,0deg)) rotateY(var(--look-y,0deg)) rotateZ(calc(var(--look-roll,0deg) - 9deg)) scale(1.04);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1.1)}
   to{transform:translate(-50%,-50%) translate(3px,-1px) perspective(180px) rotateX(var(--look-x,0deg)) rotateY(var(--look-y,0deg)) rotateZ(calc(var(--look-roll,0deg) + 9deg)) scale(1.04);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) saturate(1.35) brightness(1.08)}
@@ -1193,80 +1141,6 @@ button,input{font:inherit}
   78%{transform:translate(-50%,-50%) translateY(2px) perspective(180px) rotateX(calc(var(--look-x,0deg) + 2deg)) rotateY(var(--look-y,0deg)) rotateZ(var(--look-roll,0deg)) scale(.99);filter:drop-shadow(0 4px 8px rgba(0,0,0,.4)) brightness(.98)}
   100%{transform:translate(-50%,-50%) perspective(180px) rotateX(var(--look-x,0deg)) rotateY(var(--look-y,0deg)) rotateZ(var(--look-roll,0deg)) scale(1);filter:drop-shadow(0 5px 9px rgba(0,0,0,.42)) brightness(1)}
 }
-@keyframes throwArmPulse{
-  from{filter:brightness(1)}
-  to{filter:brightness(1.14) drop-shadow(0 0 5px rgba(255,199,0,.45))}
-}
-@keyframes throwArmShake{
-  from{margin-top:-1px}
-  to{margin-top:1px}
-}
-
-@media(max-width:600px){
-  .throw-arm{
-    width:32px;
-    height:10px;
-  }
-  .throw-arm::after{
-    right:-6px;
-    width:13px;
-    height:14px;
-  }
-  .throw-arm-a{
-    transform:rotate(var(--aim-angle,0deg)) translateX(18px) translateY(-7px) rotate(-9deg);
-  }
-  .throw-arm-b{
-    width:27px;
-    transform:rotate(var(--aim-angle,0deg)) translateX(14px) translateY(8px) rotate(11deg);
-  }
-  .active-turn .throw-arm{
-    width:39px;
-  }
-  .active-turn .throw-arm-b{
-    width:33px;
-  }
-}
-
-.hold-hands{
-  position:absolute;
-  left:50%;
-  top:50%;
-  display:none;
-  width:88px;
-  height:80px;
-  background:none;
-  opacity:0;
-  pointer-events:none;
-  transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-27px) scale(.48);
-  transform-origin:50% 72%;
-  filter:drop-shadow(0 7px 10px rgba(0,0,0,.34));
-  z-index:4;
-}
-.active-turn .throw-arm,
-.throwing-from .throw-arm,
-.catching-to .throw-arm,
-.active-turn .hold-hands{
-  display:block;
-}
-.active-turn .hold-hands{
-  opacity:.97;
-  animation:handsHold 1.05s ease-in-out infinite alternate;
-}
-.throwing-from .hold-hands{
-  display:block;
-  opacity:.96;
-  animation:handsThrowRelease var(--throw-time,760ms) cubic-bezier(.16,.92,.18,1) both;
-}
-.catching-to .hold-hands{
-  display:block;
-  opacity:.98;
-  animation:handsCatch var(--throw-time,760ms) cubic-bezier(.16,.92,.18,1) both;
-}
-.throwing-from .throw-arm,
-.catching-to .throw-arm{
-  opacity:.95;
-}
-
 #bomb-el{
   will-change:transform;
 }
@@ -1335,28 +1209,6 @@ button,input{font:inherit}
 }
 
 @media(max-width:600px){
-  .hold-hands{
-    width:68px;
-    height:62px;
-    transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-21px) scale(.44);
-  }
-  @keyframes handsHold{
-    from{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-19px) scale(.4)}
-    to{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-24px) scale(.46)}
-  }
-  @keyframes handsThrowRelease{
-    0%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-21px) scale(.44)}
-    18%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-15px) scale(.39)}
-    43%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-29px) scale(.53)}
-    78%{opacity:.54;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-13px) scale(.35)}
-    100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-10px) scale(.3)}
-  }
-  @keyframes handsCatch{
-    0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-9px) scale(.3)}
-    48%{opacity:.96;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-28px) scale(.53)}
-    72%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-17px) scale(.39)}
-    100%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-21px) scale(.44)}
-  }
   #bomb-el.bomb-throwing::before{
     height:10px;
   }
@@ -1379,25 +1231,6 @@ button,input{font:inherit}
 .p-avatar-wrap .avatar-art{
   transform:translate(calc(-50% + var(--face-shift-x,0px)),calc(-50% + var(--face-shift-y,0px))) perspective(180px) rotateX(var(--look-x,0deg)) rotateY(var(--look-y,0deg)) rotateZ(var(--look-roll,0deg));
   transition:filter .16s ease-out;
-}
-.throw-arm,
-.active-turn .throw-arm,
-.throwing-from .throw-arm,
-.catching-to .throw-arm{
-  display:none!important;
-}
-.hold-hands{
-  z-index:5;
-  filter:drop-shadow(0 8px 10px rgba(0,0,0,.36)) drop-shadow(0 0 8px rgba(255,199,0,.2));
-}
-.active-turn .hold-hands{
-  animation:handsHoldReady 1s ease-in-out infinite alternate;
-}
-.throwing-from .hold-hands{
-  animation:handsThrowReleasePro var(--throw-time,940ms) cubic-bezier(.15,.9,.18,1) both;
-}
-.catching-to .hold-hands{
-  animation:handsCatchPro var(--throw-time,940ms) cubic-bezier(.15,.9,.18,1) both;
 }
 .bomb-svg-wrap > svg > path:first-of-type{
   stroke-dasharray:var(--fuse-visible,48px) 80px;
@@ -1479,30 +1312,8 @@ button,input{font:inherit}
 }
 
 @media(max-width:600px){
-  .hold-hands{
-    width:62px;
-    height:58px;
-  }
   #bomb-el.bomb-throwing::before{
     height:12px;
-  }
-  @keyframes handsHoldReady{
-    from{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-19px) scale(.4);opacity:.92}
-    to{transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-24px) scale(.46);opacity:1}
-  }
-  @keyframes handsThrowReleasePro{
-    0%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-20px) scale(.43)}
-    18%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-13px) scale(.37)}
-    43%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-31px) scale(.54)}
-    62%{opacity:.78;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-25px) scale(.45)}
-    100%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-9px) scale(.28)}
-  }
-  @keyframes handsCatchPro{
-    0%{opacity:0;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-8px) scale(.28)}
-    38%{opacity:.45;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-19px) scale(.38)}
-    58%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-31px) scale(.54)}
-    82%{opacity:1;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-17px) scale(.39)}
-    100%{opacity:.98;transform:translate(-50%,-50%) rotate(var(--hands-rotate,0deg)) translateY(-21px) scale(.44)}
   }
 }
 
@@ -1883,12 +1694,6 @@ button,input{font:inherit}
 .catching-to .avatar-photo-stage{
   animation:photoBodyCatch var(--throw-time,940ms) cubic-bezier(.15,.9,.18,1) both;
 }
-.has-body-art .hold-hands{
-  width:72px;
-  height:66px;
-  top:52%;
-  z-index:8;
-}
 .has-body-art .p-crown{
   top:-7px;
 }
@@ -1922,10 +1727,6 @@ button,input{font:inherit}
   }
   .avatar-body-art{
     height:112px;
-  }
-  .has-body-art .hold-hands{
-    width:58px;
-    height:54px;
   }
 }
 
@@ -2306,14 +2107,6 @@ button,input{font:inherit}
 }
 
 /* Integrated character + premium arena pass. */
-.throw-arm,
-.hold-hands{
-  display:none!important;
-  width:0!important;
-  height:0!important;
-  opacity:0!important;
-  background:none!important;
-}
 
 .circle-wrapper{
   perspective:1150px;
