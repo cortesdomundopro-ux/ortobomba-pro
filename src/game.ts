@@ -773,11 +773,11 @@ const ARENA_MOBILE_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
 function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   const vw = Math.max(320, window.innerWidth || 320);
   const vh = Math.max(520, window.innerHeight || 720);
-  const reservedHeight = isMobile ? 330 : 270;
-  const maxWidthByHeight = Math.max(isMobile ? 320 : 680, (vh - reservedHeight) * 1.5);
-  const maxWidthByViewport = vw * (isMobile ? 1.02 : 0.88);
-  const maxWidth = isMobile ? 440 : 1180;
-  const minWidth = isMobile ? Math.min(vw * 0.96, 380) : Math.min(vw * 0.78, 760);
+  const reservedHeight = isMobile ? 320 : 235;
+  const maxWidthByHeight = Math.max(isMobile ? 330 : 760, (vh - reservedHeight) * 1.5);
+  const maxWidthByViewport = vw * (isMobile ? 1.04 : 0.94);
+  const maxWidth = isMobile ? 460 : 1260;
+  const minWidth = isMobile ? Math.min(vw * 0.98, 400) : Math.min(vw * 0.86, 840);
   const width = Math.round(Math.max(minWidth, Math.min(maxWidth, maxWidthByViewport, maxWidthByHeight)));
   return { width, height: Math.round(width * 2 / 3) };
 }
@@ -947,10 +947,13 @@ function renderGame() {
     const x = (point.x - 0.5) * stage.width;
     const y = (point.y - 0.5) * stage.height;
     const angle = Math.atan2(y, x) * 180 / Math.PI;
-    return { p, angle, x, y };
+    return { p, point, angle, x, y };
   });
   const activeLayout = layout.find((item) => item.p.id === GS.currentTurn);
   const previousLayout = layout.find((item) => item.p.id === previousTurnId);
+  const activeDepth = activeLayout ? Math.max(0, Math.min(1, activeLayout.point.y)) : 0.5;
+  circle.style.setProperty("--active-depth", activeDepth.toFixed(3));
+  bomb.style.zIndex = String(90 + Math.round(activeDepth * 120));
   let targetBombPoint: BombPoint = { x: 0, y: 0 };
   
   circle.querySelectorAll(".p-slot").forEach(s => s.remove());
@@ -958,7 +961,7 @@ function renderGame() {
   el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
-  layout.forEach(({ p, angle, x, y }, i) => {
+  layout.forEach(({ p, point, angle, x, y }, i) => {
     const bombPoint = handBombPoint(x, y, isMobile);
     const isTurn = p.id === GS.currentTurn;
     const isEliminated = p.lives <= 0;
@@ -999,6 +1002,9 @@ function renderGame() {
     const bodyFacesLeft = skinIndexOf(p.skinIndex) !== 0;
     const bodyFaceScale = bodyFacesLeft && lookDx > 0 ? -1 : 1;
     const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
+    const depthT = Math.max(0, Math.min(1, point.y));
+    const depthScale = isMobile ? 0.84 + depthT * 0.20 : 0.82 + depthT * 0.27;
+    const depthZ = 40 + Math.round(depthT * 90) + (isTurn ? 24 : 0);
 
     bombPoints.set(p.id, bombPoint);
 
@@ -1008,7 +1014,10 @@ function renderGame() {
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
     slot.style.setProperty("--slot-hop-x", `${hopX.toFixed(1)}px`);
     slot.style.setProperty("--slot-hop-y", `${hopY.toFixed(1)}px`);
-    slot.style.transform = "translate(calc(-50% + var(--slot-x)), calc(-50% + var(--slot-y)))";
+    slot.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${depthScale.toFixed(3)})`;
+    slot.style.zIndex = String(depthZ);
+    slot.style.setProperty("--depth-scale", depthScale.toFixed(3));
+    slot.style.setProperty("--depth-y", depthT.toFixed(3));
     slot.style.setProperty("--aim-angle", `${aimAngle.toFixed(1)}deg`);
     slot.style.setProperty("--hands-rotate", `${(aimAngle + 90).toFixed(1)}deg`);
     slot.style.setProperty("--look-x", `${lookX.toFixed(1)}deg`);

@@ -3752,3 +3752,188 @@ button,input{font:inherit}
     animation:none!important;
   }
 }
+
+/* final-composition-depth-pass: tighter camera, physical depth, and HUD integration. */
+#scr-game.active{
+  background:
+    radial-gradient(ellipse at 50% 20%,rgba(84,20,96,.12),transparent 38%),
+    radial-gradient(ellipse at 18% 62%,rgba(0,217,255,.055),transparent 33%),
+    radial-gradient(ellipse at 82% 58%,rgba(255,45,116,.065),transparent 34%),
+    linear-gradient(135deg,#05000c 0%,#0d0014 44%,#03101a 100%);
+}
+
+.game-topbar{
+  min-height:46px;
+  padding:6px 18px;
+  background:
+    linear-gradient(180deg,rgba(6,4,18,.86),rgba(6,3,18,.58));
+  border-bottom:1px solid rgba(255,255,255,.07);
+  box-shadow:0 9px 24px rgba(0,0,0,.28),0 0 18px rgba(255,0,122,.08);
+  backdrop-filter:blur(12px);
+}
+
+.icon-btn{
+  min-height:34px;
+  padding:0 14px;
+  border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.025));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 18px rgba(0,0,0,.20);
+}
+
+.round-badge{
+  min-height:28px;
+  padding:5px 22px;
+  letter-spacing:4px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.018)),
+    radial-gradient(circle at 50% 0,rgba(190,128,255,.16),transparent 70%);
+  box-shadow:inset 0 0 14px rgba(255,255,255,.04),0 0 18px rgba(190,128,255,.10);
+}
+
+.arena-wrap{
+  gap:4px;
+}
+
+.circle-wrapper{
+  max-width:1260px;
+  max-height:min(78vh,840px);
+  margin:0 auto 0;
+  filter:
+    drop-shadow(0 38px 58px rgba(0,0,0,.62))
+    drop-shadow(0 0 30px rgba(255,0,122,.12))
+    drop-shadow(0 0 24px rgba(0,217,255,.09));
+}
+
+.arena-atmosphere-layer{
+  opacity:.50;
+}
+
+.arena-asset-bg{
+  opacity:.78;
+  filter:saturate(.98) contrast(.96) brightness(.78);
+}
+
+.arena-asset-floor{
+  filter:saturate(1.04) contrast(1.02) brightness(.96);
+}
+
+.arena-asset-structure{
+  filter:
+    saturate(1.12)
+    contrast(1.05)
+    drop-shadow(0 22px 24px rgba(0,0,0,.52))
+    drop-shadow(0 0 18px rgba(0,217,255,.14))
+    drop-shadow(0 0 24px rgba(255,0,122,.15));
+}
+
+.p-slot{
+  transform-origin:50% 88%;
+  isolation:isolate;
+  will-change:transform;
+  filter:
+    drop-shadow(0 16px 14px rgba(0,0,0,.34))
+    drop-shadow(0 0 10px rgba(255,255,255,.045));
+}
+
+.p-slot::before{
+  top:84%;
+  opacity:.68;
+  transform:translateX(-50%) perspective(230px) rotateX(68deg);
+  background:
+    radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.56),rgba(0,0,0,.24) 50%,transparent 74%),
+    radial-gradient(ellipse at 50% 50%,var(--slot-color,#ff007a),transparent 78%);
+  box-shadow:
+    0 12px 18px rgba(0,0,0,.34),
+    0 0 16px color-mix(in srgb, var(--slot-color,#ff007a) 70%, transparent);
+}
+
+.p-slot.active-turn::before{
+  opacity:.94;
+}
+
+.has-body-art.p-avatar-wrap{
+  transform-origin:50% 94%;
+}
+
+.has-body-art.p-avatar-wrap::before{
+  opacity:.32;
+}
+
+.active-turn .has-body-art.p-avatar-wrap::before{
+  opacity:.50;
+}
+
+.avatar-body-art{
+  transform-origin:50% 93%;
+}
+
+.q-container{
+  max-width:480px;
+  padding:16px 18px;
+  border-radius:18px;
+  background:
+    linear-gradient(180deg,rgba(17,13,45,.92),rgba(7,7,26,.95)),
+    radial-gradient(circle at 50% 0,rgba(255,0,122,.15),transparent 68%);
+}
+
+@keyframes playerThrowHop{
+  0%{transform:translate(calc(-50% + var(--slot-x)),calc(-50% + var(--slot-y))) scale(var(--depth-scale,1)) rotate(0deg)}
+  16%{transform:translate(calc(-50% + var(--slot-x) - var(--slot-hop-x)),calc(-50% + var(--slot-y) + 5px)) scale(var(--depth-scale,1)) rotate(calc(0deg - var(--look-roll,0deg)))}
+  42%{transform:translate(calc(-50% + var(--slot-x) + var(--slot-hop-x)),calc(-50% + var(--slot-y) + var(--slot-hop-y))) scale(var(--depth-scale,1)) rotate(var(--look-roll,0deg))}
+  67%{transform:translate(calc(-50% + var(--slot-x) + var(--slot-hop-x)),calc(-50% + var(--slot-y) + 3px)) scale(var(--depth-scale,1)) rotate(0deg)}
+  100%{transform:translate(calc(-50% + var(--slot-x)),calc(-50% + var(--slot-y))) scale(var(--depth-scale,1)) rotate(0deg)}
+}
+
+@keyframes playerCatchHop{
+  0%{transform:translate(calc(-50% + var(--slot-x)),calc(-50% + var(--slot-y))) scale(var(--depth-scale,1)) rotate(0deg)}
+  24%{transform:translate(calc(-50% + var(--slot-x) - var(--slot-hop-x)),calc(-50% + var(--slot-y) + 7px)) scale(var(--depth-scale,1)) rotate(calc(0deg - var(--look-roll,0deg)))}
+  55%{transform:translate(calc(-50% + var(--slot-x) + var(--slot-hop-x)),calc(-50% + var(--slot-y) + var(--slot-hop-y))) scale(var(--depth-scale,1)) rotate(var(--look-roll,0deg))}
+  80%{transform:translate(calc(-50% + var(--slot-x)),calc(-50% + var(--slot-y) + 3px)) scale(var(--depth-scale,1)) rotate(0deg)}
+  100%{transform:translate(calc(-50% + var(--slot-x)),calc(-50% + var(--slot-y))) scale(var(--depth-scale,1)) rotate(0deg)}
+}
+
+@media(max-width:600px){
+  #scr-game.active{
+    padding-top:54px;
+    padding-bottom:100px;
+  }
+  .game-topbar{
+    min-height:50px;
+    padding:7px 12px;
+  }
+  .icon-btn{
+    min-height:34px;
+    padding:0 12px;
+  }
+  .round-badge{
+    min-height:28px;
+    padding:5px 18px;
+    letter-spacing:3px;
+  }
+  .circle-wrapper{
+    max-height:none;
+    margin-top:0;
+    filter:
+      drop-shadow(0 24px 34px rgba(0,0,0,.52))
+      drop-shadow(0 0 16px rgba(255,0,122,.10));
+  }
+  .arena-atmosphere-layer{
+    opacity:.36;
+  }
+  .arena-asset-mobile-base{
+    filter:
+      saturate(1.08)
+      contrast(1.04)
+      brightness(.98)
+      drop-shadow(0 13px 17px rgba(0,0,0,.48))
+      drop-shadow(0 0 12px rgba(255,0,122,.10));
+  }
+  .p-slot::before{
+    top:83%;
+    opacity:.66;
+  }
+  .q-container{
+    padding:13px 14px;
+    border-radius:16px;
+  }
+}
