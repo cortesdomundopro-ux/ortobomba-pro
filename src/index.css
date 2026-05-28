@@ -4013,3 +4013,16 @@ button,input{font:inherit}
     opacity:.38;
   }
 }
+
+/* final-mobile-framing-pass: spectators keep the arena near the top instead of vertically floating in empty space. */
+@media(max-width:600px){
+  #scr-game.active.no-question{
+    justify-content:flex-start!important;
+    overflow-y:auto;
+    padding-top:54px;
+    padding-bottom:100px;
+  }
+  #scr-game.active.no-question .arena-wrap{
+    transform:translateY(-14px);
+  }
+}
