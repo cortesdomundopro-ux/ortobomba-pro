@@ -356,6 +356,50 @@ button {
   -webkit-user-drag: none;
 }
 
+.arena-static-bomb-masks {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.arena-bomb-mask {
+  position: absolute;
+  width: 6.8%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  opacity: 0.98;
+  background:
+    radial-gradient(circle at 42% 35%, rgba(48, 57, 68, 0.86), rgba(15, 19, 28, 0.97) 52%, rgba(4, 5, 10, 0.96) 78%),
+    linear-gradient(135deg, rgba(0, 217, 255, 0.14), rgba(255, 45, 143, 0.08));
+  box-shadow:
+    inset 0 0 16px rgba(255, 255, 255, 0.04),
+    inset 0 -12px 20px rgba(0, 0, 0, 0.38),
+    0 0 18px rgba(0, 0, 0, 0.28);
+  filter: blur(0.2px);
+}
+
+.arena-bomb-mask::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -18%;
+  width: 88%;
+  height: 46%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(12, 16, 24, 0.94), rgba(12, 16, 24, 0.42) 58%, transparent 78%);
+  filter: blur(4px);
+}
+
+.mask-play-1 { left: 16.8%; top: 20.8%; }
+.mask-play-2 { left: 72.6%; top: 20.1%; }
+.mask-play-3 { left: 26.1%; top: 67.0%; }
+.mask-play-4 { left: 73.7%; top: 66.8%; }
+.mask-hud-2 { left: 91.1%; top: 9.8%; width: 5.3%; }
+.mask-hud-3 { left: 6.8%; top: 91.2%; width: 5.4%; }
+
 .arena-status-panel {
   position: absolute;
   z-index: 82;
