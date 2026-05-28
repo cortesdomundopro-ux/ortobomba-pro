@@ -26,6 +26,14 @@ const AVATAR_BODY_PALETTES = [
   { shirt: "#2fd56f", shirt2: "#ffe44f", pants: "#1f3762", shoe: "#ff7b2f", skin: "#b66b32" },
   { shirt: "#f5f5ff", shirt2: "#111827", pants: "#303a54", shoe: "#70e0ff", skin: "#e5b28f" }
 ];
+const BODY_IMAGE_FILTERS = [
+  "none",
+  "none",
+  "none",
+  "none",
+  "hue-rotate(148deg) saturate(1.18) brightness(1.04)",
+  "hue-rotate(34deg) saturate(1.22) brightness(1.05)"
+];
 
 declare const firebase: any;
 
@@ -679,10 +687,10 @@ function handBombPoint(x: number, y: number, isMobile: boolean): BombPoint {
   const inwardY = -y / distance;
   const tangentX = -inwardY;
   const tangentY = inwardX;
-  const side = x >= 0 ? -1 : 1;
-  const inwardOffset = isMobile ? 44 : 58;
-  const sideOffset = isMobile ? 15 : 24;
-  const lowerOffset = isMobile ? 6 : 10;
+  const side = x >= 0 ? 1 : -1;
+  const inwardOffset = isMobile ? 10 : 16;
+  const sideOffset = isMobile ? 34 : 52;
+  const lowerOffset = isMobile ? -2 : -4;
   return {
     x: x + inwardX * inwardOffset + tangentX * side * sideOffset,
     y: y + inwardY * inwardOffset + tangentY * side * sideOffset + lowerOffset
@@ -802,7 +810,7 @@ function animateBombPass(bomb: HTMLElement, from: BombPoint, to: BombPoint) {
   activeBombPass = passAnimation;
 
   const finishPass = () => {
-    if (activeBombPass && activeBombPass !== passAnimation) return;
+    if (activeBombPass !== passAnimation) return;
     bomb.classList.remove("bomb-throwing", "pass-pop");
     bomb.style.transition = "";
     bomb.style.transform = targetTransform;
@@ -924,6 +932,7 @@ function renderGame() {
     slot.style.setProperty("--avatar-shoe", palette.shoe);
     slot.style.setProperty("--avatar-skin", palette.skin);
     slot.style.setProperty("--body-face-scale", String(bodyFaceScale));
+    slot.style.setProperty("--body-filter", BODY_IMAGE_FILTERS[skinIndexOf(p.skinIndex)] ?? "none");
     slot.style.setProperty("--slot-color", slotColor);
     slot.dataset.playerId = p.id;
     slot.dataset.state = visualState;
@@ -969,10 +978,17 @@ function renderGame() {
   if (turnChanged) {
     const fromPoint = previousTurnId ? bombPoints.get(previousTurnId) : undefined;
     if (previousTurnId && GS.currentTurn && fromPoint) {
+      const turnAfterPass = GS.currentTurn;
       animateBombPass(bomb, fromPoint, targetBombPoint);
       window.setTimeout(() => {
         circle.querySelectorAll(".throwing-from,.catching-to").forEach((slot) => {
           slot.classList.remove("throwing-from", "catching-to");
+        });
+        circle.querySelectorAll<HTMLElement>(".state-throwingBomb,.state-catchingBomb").forEach((slot) => {
+          const nextState = slot.dataset.playerId === turnAfterPass ? "holdingBomb" : "idle";
+          slot.classList.remove("state-throwingBomb", "state-catchingBomb", "state-idle", "state-holdingBomb");
+          slot.classList.add(`state-${nextState}`);
+          slot.dataset.state = nextState;
         });
       }, BOMB_PASS_MS + 140);
     } else {

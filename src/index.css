@@ -1872,10 +1872,10 @@ button,input{font:inherit}
   object-fit:contain;
   transform:translateX(-50%) scaleX(var(--body-face-scale,1));
   transform-origin:50% 82%;
-  filter:drop-shadow(0 8px 11px rgba(0,0,0,.42));
+  filter:var(--body-filter,none) drop-shadow(0 8px 11px rgba(0,0,0,.42));
 }
 .active-turn .has-body-art .avatar-body-art{
-  filter:drop-shadow(0 10px 13px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,199,0,.45));
+  filter:var(--body-filter,none) drop-shadow(0 10px 13px rgba(0,0,0,.5)) drop-shadow(0 0 16px rgba(255,199,0,.45));
 }
 .throwing-from .avatar-photo-stage{
   animation:photoBodyThrow var(--throw-time,940ms) cubic-bezier(.15,.9,.18,1) both;
@@ -2076,14 +2076,21 @@ button,input{font:inherit}
   z-index:3;
 }
 .p-name{
+  position:relative;
+  z-index:9;
   padding:2px 7px;
   border-radius:999px;
   background:rgba(8,3,18,.68);
   box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 3px 10px rgba(0,0,0,.28);
   color:#eee5ff;
+  font-size:10px;
+  line-height:1.05;
+  min-height:14px;
   text-shadow:0 0 8px rgba(255,255,255,.22);
 }
 .p-lives{
+  position:relative;
+  z-index:9;
   display:flex;
   gap:2px;
   justify-content:center;
