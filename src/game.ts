@@ -660,7 +660,7 @@ function startRoomState(room: Room): Room {
 }
 
 function bombScale(): number {
-  return window.innerWidth < 600 ? 0.34 : 0.44;
+  return window.innerWidth < 600 ? 0.42 : 0.52;
 }
 
 function bombTransform(point: BombPoint, scale = bombScale()): string {
