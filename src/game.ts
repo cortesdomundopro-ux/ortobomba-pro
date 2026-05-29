@@ -672,62 +672,24 @@ type ArenaSlotPoint = {
   y: number;
 };
 
-const ARENA_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
-  1: [{ x: 0.5, y: 0.5 }],
-  2: [
-    { x: 0.20, y: 0.31 },
-    { x: 0.80, y: 0.31 }
-  ],
-  3: [
-    { x: 0.20, y: 0.31 },
-    { x: 0.80, y: 0.31 },
-    { x: 0.23, y: 0.70 }
-  ],
-  4: [
-    { x: 0.20, y: 0.31 },
-    { x: 0.80, y: 0.31 },
-    { x: 0.23, y: 0.70 },
-    { x: 0.78, y: 0.69 }
-  ]
+const ARENA_ASSET_WIDTH = 1152;
+const ARENA_ASSET_HEIGHT = 928;
+
+type PlayerLayerSlot = {
+  asset: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  bomb: ArenaSlotPoint;
 };
 
-const ARENA_MOBILE_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
-  1: [{ x: 0.5, y: 0.5 }],
-  2: [
-    { x: 0.22, y: 0.31 },
-    { x: 0.78, y: 0.31 }
-  ],
-  3: [
-    { x: 0.22, y: 0.31 },
-    { x: 0.78, y: 0.31 },
-    { x: 0.24, y: 0.70 }
-  ],
-  4: [
-    { x: 0.22, y: 0.31 },
-    { x: 0.78, y: 0.31 },
-    { x: 0.24, y: 0.70 },
-    { x: 0.78, y: 0.69 }
-  ]
-};
-
-const ARENA_BOMB_SLOT_LAYOUTS: Record<number, ArenaSlotPoint[]> = {
-  1: [{ x: 0.5, y: 0.5 }],
-  2: [
-    { x: 0.18, y: 0.20 },
-    { x: 0.76, y: 0.20 }
-  ],
-  3: [
-    { x: 0.18, y: 0.20 },
-    { x: 0.76, y: 0.20 },
-    { x: 0.25, y: 0.69 }
-  ],
-  4: [
-    { x: 0.18, y: 0.20 },
-    { x: 0.76, y: 0.20 },
-    { x: 0.25, y: 0.69 },
-    { x: 0.75, y: 0.69 }
-  ]
-};
+const PLAYER_LAYER_SLOTS: PlayerLayerSlot[] = [
+  { asset: "/arena/players/player-1.png", x: 238, y: 197, width: 160, height: 218, bomb: { x: 0.18, y: 0.19 } },
+  { asset: "/arena/players/player-2.png", x: 905, y: 199, width: 198, height: 226, bomb: { x: 0.79, y: 0.19 } },
+  { asset: "/arena/players/player-3.png", x: 247, y: 632, width: 202, height: 232, bomb: { x: 0.20, y: 0.64 } },
+  { asset: "/arena/players/player-4.png", x: 917, y: 626, width: 202, height: 232, bomb: { x: 0.80, y: 0.63 } }
+];
 
 function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   const vw = Math.max(320, window.innerWidth || 320);
@@ -738,18 +700,7 @@ function arenaStageSize(isMobile: boolean): { width: number; height: number } {
   const maxWidth = isMobile ? 460 : 1180;
   const minWidth = isMobile ? Math.min(vw * 0.94, 380) : Math.min(vw * 0.76, 820);
   const width = Math.round(Math.max(minWidth, Math.min(maxWidth, maxWidthByViewport, maxWidthByHeight)));
-  return { width, height: Math.round(width * 0.8) };
-}
-
-function arenaSlotLayout(count: number, isMobile: boolean): ArenaSlotPoint[] {
-  const normalized = Math.max(1, Math.min(MAX_PLAYERS, count || 1));
-  const layouts = isMobile ? ARENA_MOBILE_SLOT_LAYOUTS : ARENA_SLOT_LAYOUTS;
-  return layouts[normalized] ?? layouts[MAX_PLAYERS];
-}
-
-function arenaBombLayout(count: number): ArenaSlotPoint[] {
-  const normalized = Math.max(1, Math.min(MAX_PLAYERS, count || 1));
-  return ARENA_BOMB_SLOT_LAYOUTS[normalized] ?? ARENA_BOMB_SLOT_LAYOUTS[MAX_PLAYERS];
+  return { width, height: Math.round(width * ARENA_ASSET_HEIGHT / ARENA_ASSET_WIDTH) };
 }
 
 function pointToBomb(stage: { width: number; height: number }, point: ArenaSlotPoint): BombPoint {
@@ -912,15 +863,19 @@ function renderGame() {
   const previousTurnId = prevTurnId;
   const turnChanged = previousTurnId !== GS.currentTurn;
   const bombPoints = new Map<string, BombPoint>();
-  const slotLayout = arenaSlotLayout(count, isMobile);
-  const bombLayout = arenaBombLayout(count);
   const layout = players.map((p, i) => {
-    const point = slotLayout[i % slotLayout.length];
-    const x = (point.x - 0.5) * stage.width;
-    const y = (point.y - 0.5) * stage.height;
+    const layer = PLAYER_LAYER_SLOTS[i % PLAYER_LAYER_SLOTS.length];
+    const point = {
+      x: layer.x / ARENA_ASSET_WIDTH,
+      y: layer.y / ARENA_ASSET_HEIGHT
+    };
+    const x = (layer.x / ARENA_ASSET_WIDTH - 0.5) * stage.width;
+    const y = (layer.y / ARENA_ASSET_HEIGHT - 0.5) * stage.height;
     const angle = Math.atan2(y, x) * 180 / Math.PI;
-    const bombPoint = pointToBomb(stage, bombLayout[i % bombLayout.length]);
-    return { p, point, angle, x, y, bombPoint };
+    const bombPoint = pointToBomb(stage, layer.bomb);
+    const characterWidth = stage.width * layer.width / ARENA_ASSET_WIDTH;
+    const characterHeight = stage.height * layer.height / ARENA_ASSET_HEIGHT;
+    return { p, point, angle, x, y, bombPoint, layer, characterWidth, characterHeight };
   });
   const activeLayout = layout.find((item) => item.p.id === GS.currentTurn);
   const previousLayout = layout.find((item) => item.p.id === previousTurnId);
@@ -935,7 +890,7 @@ function renderGame() {
   el<HTMLSpanElement>("arena-round-val").textContent = String(GS.roundCount || 1);
   el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
-  layout.forEach(({ p, point, angle, x, y, bombPoint }, i) => {
+  layout.forEach(({ p, point, angle, x, y, bombPoint, layer, characterWidth, characterHeight }, i) => {
     const isTurn = p.id === GS.currentTurn;
     const isEliminated = p.lives <= 0;
     const isHost = p.id === GS.hostId;
@@ -946,18 +901,18 @@ function renderGame() {
     const visualState = playerVisualState(p, isTurn, isThrowingFrom, isCatchingTo, lostLife);
     const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
     const depthT = Math.max(0, Math.min(1, point.y));
-    const depthScale = isMobile ? 0.88 + depthT * 0.10 : 0.90 + depthT * 0.14;
     const depthZ = 40 + Math.round(depthT * 90) + (isTurn ? 24 : 0);
 
     bombPoints.set(p.id, bombPoint);
 
     const slot = document.createElement("div");
     slot.className = `p-slot arena-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
+    slot.style.width = `${characterWidth.toFixed(1)}px`;
+    slot.style.height = `${characterHeight.toFixed(1)}px`;
     slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
     slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
-    slot.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px)) scale(${depthScale.toFixed(3)})`;
+    slot.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px))`;
     slot.style.zIndex = String(depthZ);
-    slot.style.setProperty("--depth-scale", depthScale.toFixed(3));
     slot.style.setProperty("--depth-y", depthT.toFixed(3));
     slot.style.setProperty("--slot-color", slotColor);
     slot.dataset.playerId = p.id;
@@ -965,6 +920,7 @@ function renderGame() {
     slot.innerHTML = `
       <div class="arena-player-marker">
         ${isHost ? '<div class="p-crown">HOST</div>' : ''}
+        <img class="arena-character-art" src="${esc(layer.asset)}" alt="" draggable="false">
         <span class="arena-player-dot" aria-hidden="true"></span>
       </div>
       <div class="p-name">${esc(p.nick)}</div>

@@ -403,12 +403,7 @@ button {
 }
 
 .p-slot.arena-slot {
-  width: 156px;
-  height: 74px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
+  display: block;
   transform-origin: 50% 78%;
   pointer-events: none;
 }
@@ -417,15 +412,15 @@ button {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 10px;
+  bottom: 0;
   z-index: -1;
-  width: 96px;
-  height: 30px;
+  width: 72%;
+  height: 15%;
   transform: translateX(-50%);
   border-radius: 999px;
   background: radial-gradient(ellipse at 50% 50%, color-mix(in srgb, var(--slot-color, #00d9ff) 34%, transparent), transparent 72%);
-  opacity: 0.28;
-  filter: blur(1px);
+  opacity: 0.48;
+  filter: blur(1.5px);
 }
 
 .p-slot.arena-slot.active-turn::before {
@@ -435,10 +430,23 @@ button {
 }
 
 .arena-player-marker {
-  position: relative;
-  width: 1px;
-  height: 1px;
+  position: absolute;
+  inset: 0;
   transform-origin: center bottom;
+}
+
+.arena-character-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter:
+    drop-shadow(0 16px 18px rgba(0, 0, 0, 0.5))
+    drop-shadow(0 0 12px color-mix(in srgb, var(--slot-color, #00d9ff) 24%, transparent));
 }
 
 .arena-player-marker.panic {
@@ -455,7 +463,7 @@ button {
 
 .arena-slot .p-crown {
   position: absolute;
-  top: -52px;
+  top: -13px;
   left: 50%;
   transform: translateX(-50%);
   color: var(--gold);
@@ -464,8 +472,11 @@ button {
 }
 
 .arena-slot .p-name {
+  position: absolute;
+  top: calc(100% - 8px);
+  left: 50%;
+  transform: translateX(-50%);
   max-width: 138px;
-  margin-top: 6px;
   padding: 3px 10px;
   overflow: hidden;
   color: #fff;
@@ -482,7 +493,10 @@ button {
 }
 
 .arena-slot .p-lives {
-  margin-top: 3px;
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 12px;
   line-height: 1;
   filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.65));
@@ -942,23 +956,19 @@ button {
     letter-spacing: 0.5px;
   }
 
-  .p-slot.arena-slot {
-    width: 96px;
-    height: 58px;
-  }
-
   .p-slot.arena-slot::before {
-    width: 64px;
-    height: 22px;
-    bottom: 7px;
+    width: 70%;
+    height: 14%;
+    bottom: 0;
   }
 
   .arena-slot .p-crown {
-    top: -42px;
+    top: -10px;
     font-size: 9px;
   }
 
   .arena-slot .p-name {
+    top: calc(100% - 7px);
     max-width: 92px;
     padding: 2px 7px;
     font-size: 8px;
@@ -966,6 +976,7 @@ button {
   }
 
   .arena-slot .p-lives {
+    top: calc(100% + 12px);
     font-size: 10px;
   }
 
