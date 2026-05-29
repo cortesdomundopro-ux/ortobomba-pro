@@ -147,6 +147,10 @@ function now(): number {
   return Date.now();
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 function saveNick(n: string) {
   try { localStorage.setItem("ob_nick", n); } catch {}
 }
@@ -344,6 +348,17 @@ function initFB(retries = 12) {
   } catch { db = null; }
 }
 
+async function ensureDbReady(timeoutMs = 8000): Promise<boolean> {
+  if (db) return true;
+  initFB();
+  const startedAt = now();
+  while (!db && now() - startedAt < timeoutMs) {
+    await delay(150);
+    if (typeof firebase !== "undefined") initFB(0);
+  }
+  return Boolean(db);
+}
+
 function showScreen(id: "setup" | "lobby" | "game" | "admin") {
   document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
   el<HTMLDivElement>("scr-" + id).classList.add("active");
@@ -408,7 +423,7 @@ function roomCode(): string {
 
 async function partidaRapida() {
   if (!getNickOrToast()) return;
-  if (!db) { startLocalDemo(); return; }
+  if (!(await ensureDbReady())) { startLocalDemo(); return; }
   const snap = await db.ref("rooms").orderByChild("quick").equalTo(true).once("value");
   const rooms = (snap.val() ?? {}) as Record<string, Room>;
   const open = Object.values(rooms).find((r) => {
@@ -423,7 +438,7 @@ async function partidaRapida() {
 async function criarSala(quick = false) {
   const nick = getNickOrToast();
   if (!nick) return;
-  if (!db) { startLocalDemo(); return; }
+  if (!(await ensureDbReady())) { startLocalDemo(); return; }
   const code = quick ? `RAP${roomCode().slice(0, 3)}` : roomCode();
   ME.salaId = code;
   ME.host = true;
@@ -450,7 +465,7 @@ async function entrarSala() {
 async function joinRoom(code: string) {
   const nick = getNickOrToast();
   if (!nick) return;
-  if (!db) { startLocalDemo(); return; }
+  if (!(await ensureDbReady())) { startLocalDemo(); return; }
   const ref = db.ref(`rooms/${code}`);
   const snap = await ref.once("value");
   const room = snap.val() as Room | null;
@@ -1349,7 +1364,7 @@ async function adminPanel() {
 }
 
 async function renderAdmin() {
-  if (!db) return;
+  if (!(await ensureDbReady())) return;
   if (adminRef) adminRef.off();
   adminRef = db.ref("rooms");
   adminRef.on("value", (snap: any) => {
