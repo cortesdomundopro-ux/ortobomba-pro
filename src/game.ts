@@ -427,7 +427,7 @@ async function partidaRapida() {
   const snap = await db.ref("rooms").orderByChild("quick").equalTo(true).once("value");
   const rooms = (snap.val() ?? {}) as Record<string, Room>;
   const open = Object.values(rooms).find((r) => {
-    const players = Object.values(r.players ?? {}).filter((p) => p.online);
+    const players = Object.values(r.players ?? {}).filter(isFreshPlayer);
     const host = r.players?.[r.hostId];
     return r.status === "lobby" && players.length < MAX_PLAYERS && isFreshPlayer(host);
   });
@@ -471,7 +471,7 @@ async function joinRoom(code: string) {
   const room = snap.val() as Room | null;
   if (!room) { toast("Sala nao encontrada.", "#ff3535"); return; }
   if (room.status !== "lobby") { toast("Essa sala ja esta em jogo.", "#ff3535"); return; }
-  const players = Object.values(room.players ?? {}).filter((p) => p.online);
+  const players = Object.values(room.players ?? {}).filter(isFreshPlayer);
   const existingPlayer = room.players?.[ME.id];
   if (existingPlayer?.online) {
     ME.skinIndex = existingPlayer.skinIndex;
@@ -605,11 +605,11 @@ function renderLobby() {
 }
 
 function sortedPlayers(players: Record<string, Player>): Player[] {
-  return Object.values(players).filter((p) => p.online).sort((a, b) => a.joinedAt - b.joinedAt);
+  return Object.values(players).filter(isFreshPlayer).sort((a, b) => a.joinedAt - b.joinedAt);
 }
 
 function alivePlayers(room: Room): Player[] {
-  return Object.values(room.players).filter((p) => p.lives > 0 && p.online);
+  return sortedPlayers(room.players).filter((p) => p.lives > 0);
 }
 
 function chooseQuestion(used: number[]): { idx: number; q: Question; used: number[] } {
@@ -1149,7 +1149,7 @@ function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Room
     player.score += 10;
   }
 
-  const alive = Object.values(players).filter(p => p.lives > 0 && p.online);
+  const alive = Object.values(players).filter((p) => p.lives > 0 && isFreshPlayer(p));
   if (alive.length <= 1) {
     return {
       ...room,
@@ -1264,7 +1264,7 @@ function showReaction(playerId: string, emoji: string) {
 
 function getReactionPlayerId(): string {
   if (ME.id) return ME.id;
-  const nickMatch = sortedPlayers(GS.players).find((p) => p.online && p.nick === ME.nick);
+  const nickMatch = sortedPlayers(GS.players).find((p) => p.nick === ME.nick);
   const visiblePlayer =
     document.querySelector<HTMLElement>(".p-slot:not(.eliminated)")?.dataset.playerId ??
     document.querySelector<HTMLElement>(".p-slot")?.dataset.playerId;
@@ -1379,7 +1379,7 @@ async function renderAdmin() {
       <div class="room-card">
         <div class="room-title">${esc(r.code)} - ${esc(r.status)}</div>
         <div class="room-players">
-          ${Object.values(r.players ?? {}).map((p) => `<span class="p-badge">${esc(p.nick)}</span>`).join("")}
+          ${Object.values(r.players ?? {}).filter(isFreshPlayer).map((p) => `<span class="p-badge">${esc(p.nick)}</span>`).join("")}
         </div>
       </div>
     `).join("") || "Nenhuma sala.";
