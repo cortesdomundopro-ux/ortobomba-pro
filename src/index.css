@@ -366,46 +366,51 @@ button {
 .arena-bomb-mask {
   --mask-rot: -8deg;
   --mask-glow: rgba(0, 217, 255, 0.18);
-  --mask-tint-a: rgba(5, 9, 18, 0.92);
-  --mask-tint-b: rgba(8, 10, 18, 0.72);
+  --mask-tint-a: rgba(3, 6, 13, 0.97);
+  --mask-tint-b: rgba(9, 12, 20, 0.91);
   position: absolute;
-  width: 8.2%;
-  aspect-ratio: 1.35;
+  width: 9.2%;
+  aspect-ratio: 1.04;
   transform: translate(-50%, -50%) rotate(var(--mask-rot));
-  border-radius: 44% 56% 50% 42% / 58% 42% 56% 44%;
-  opacity: 0.95;
+  border-radius: 42% 58% 47% 53% / 36% 48% 52% 64%;
+  opacity: 0.97;
   background:
-    radial-gradient(ellipse at 50% 52%, var(--mask-tint-a) 0 34%, var(--mask-tint-b) 58%, rgba(5, 6, 12, 0.12) 100%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 54%),
-    linear-gradient(135deg, rgba(0, 217, 255, 0.10), rgba(255, 45, 143, 0.08));
+    linear-gradient(126deg, var(--mask-tint-a) 0 38%, var(--mask-tint-b) 64%, rgba(6, 7, 13, 0.76) 100%),
+    radial-gradient(ellipse at 22% 28%, var(--mask-glow), transparent 72%);
   box-shadow:
-    inset 0 0 18px rgba(255, 255, 255, 0.035),
-    inset 0 -12px 24px rgba(0, 0, 0, 0.42),
-    0 0 22px var(--mask-glow);
-  backdrop-filter: blur(9px) brightness(0.72) saturate(0.92);
-  -webkit-backdrop-filter: blur(9px) brightness(0.72) saturate(0.92);
-  filter: blur(0.45px);
+    inset 0 0 18px rgba(255, 255, 255, 0.025),
+    inset 0 -14px 26px rgba(0, 0, 0, 0.52),
+    0 0 18px var(--mask-glow);
+  backdrop-filter: blur(12px) brightness(0.58) saturate(0.82);
+  -webkit-backdrop-filter: blur(12px) brightness(0.58) saturate(0.82);
+  filter: blur(0.55px);
 }
 
 .arena-bomb-mask::before {
   content: "";
   position: absolute;
-  inset: 12% 10%;
+  left: -7%;
+  right: -7%;
+  top: -28%;
+  height: 58%;
   border-radius: inherit;
   background:
-    repeating-linear-gradient(112deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 9px),
-    radial-gradient(ellipse at 62% 45%, rgba(255, 255, 255, 0.04), transparent 62%);
-  opacity: 0.35;
+    linear-gradient(180deg, rgba(4, 6, 12, 0.94), rgba(4, 6, 12, 0.78) 64%, transparent),
+    radial-gradient(ellipse at 50% 45%, var(--mask-glow), transparent 74%);
+  opacity: 0.94;
+  filter: blur(5px);
 }
 
 .arena-bomb-mask::after {
   content: "";
   position: absolute;
-  inset: -12%;
+  inset: -10%;
   border-radius: inherit;
-  background: radial-gradient(ellipse, var(--mask-glow), transparent 68%);
-  opacity: 0.58;
-  filter: blur(6px);
+  background:
+    repeating-linear-gradient(112deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 10px),
+    radial-gradient(ellipse, var(--mask-glow), transparent 70%);
+  opacity: 0.34;
+  filter: blur(5px);
 }
 
 .mask-play-1 { left: 16.8%; top: 20.8%; --mask-rot: -22deg; --mask-glow: rgba(0, 217, 255, 0.18); }
@@ -414,8 +419,8 @@ button {
 .mask-play-4 { left: 73.7%; top: 66.8%; --mask-rot: -16deg; --mask-glow: rgba(255, 199, 0, 0.18); }
 .mask-hud-2,
 .mask-hud-3 {
-  width: 7%;
-  aspect-ratio: 1.7;
+  width: 7.8%;
+  aspect-ratio: 1.55;
   border-radius: 16px 22px 18px 14px;
   opacity: 0.92;
 }
