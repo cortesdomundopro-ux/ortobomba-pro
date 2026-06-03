@@ -17,6 +17,17 @@ const TURN_DURATION = 10;
 const MAX_PLAYERS = 4;
 const PLAYER_STALE_MS = 35_000;
 const BOMB_PASS_MS = 940;
+const BOMBER_WIDTH = 13;
+const BOMBER_HEIGHT = 11;
+const BOMBER_BOMB_MS = 2200;
+const BOMBER_EXPLOSION_MS = 650;
+const BOMBER_HIT_COOLDOWN_MS = 900;
+const BOMBER_STARTS: ArenaSlotPoint[] = [
+  { x: 1, y: 1 },
+  { x: BOMBER_WIDTH - 2, y: 1 },
+  { x: 1, y: BOMBER_HEIGHT - 2 },
+  { x: BOMBER_WIDTH - 2, y: BOMBER_HEIGHT - 2 }
+];
 const PLAYER_EMOJIS = ["\u{1F604}", "\u{1F60E}", "\u{1F916}", "\u{1F47B}"];
 const SLOT_COLORS = ["#00d9ff", "#ff4fb8", "#35f06b", "#ffc700"];
 
@@ -40,6 +51,7 @@ type Room = {
   status: "lobby" | "playing" | "finished";
   hostId: string;
   players: Record<string, Player>;
+  bomber?: BomberState | null;
   currentTurn: string | null;
   currentQIndex: number | null;
   usedQ: number[];
@@ -54,6 +66,44 @@ type Room = {
 type BombPoint = {
   x: number;
   y: number;
+};
+
+type BomberCell = "empty" | "wall" | "block";
+
+type BomberPlayerState = {
+  x: number;
+  y: number;
+  lives: number;
+  alive: boolean;
+  lastHitAt?: number;
+};
+
+type BomberBomb = {
+  id: string;
+  ownerId: string;
+  x: number;
+  y: number;
+  placedAt: number;
+  explodeAt: number;
+  range: number;
+};
+
+type BomberExplosion = {
+  id: string;
+  cells: ArenaSlotPoint[];
+  createdAt: number;
+  expiresAt: number;
+};
+
+type BomberState = {
+  width: number;
+  height: number;
+  cells: BomberCell[];
+  players: Record<string, BomberPlayerState>;
+  bombs: BomberBomb[];
+  explosions: BomberExplosion[];
+  startedAt: number;
+  updatedAt: number;
 };
 
 type PlayerVisualState =
@@ -84,6 +134,8 @@ let localMode = false;
 let localRoom: Room | null = null;
 let lastTickSecond: number | null = null;
 let reactionEventsBound = false;
+let bomberEventsBound = false;
+let bomberTickInterval: ReturnType<typeof setInterval> | null = null;
 let lastRoomSignature = "";
 let runtimePlayerId = uid();
 const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
@@ -367,6 +419,7 @@ function showScreen(id: "setup" | "lobby" | "game" | "admin") {
   setParticlesActive(id === "setup");
   if (AC && AC.state === "suspended") void AC.resume();
   if (id !== "game") stopTimer();
+  if (id !== "game") stopBomberTick();
 }
 
 function getNickOrToast(): string | null {
@@ -555,6 +608,7 @@ function normalizeRoom(room: Room): Room {
     ...emptyRoom(room.code),
     ...room,
     players: room.players ?? {},
+    bomber: room.bomber ?? null,
     usedQ: room.usedQ ?? [],
     eliminationOrder: room.eliminationOrder ?? []
   };
@@ -579,6 +633,7 @@ function roomRenderSignature(room: Room): string {
     room.turnStartedAt,
     room.roundCount,
     room.winnerId ?? null,
+    room.bomber ?? null,
     players
   ]);
 }
@@ -621,6 +676,285 @@ function chooseQuestion(used: number[]): { idx: number; q: Question; used: numbe
   return { idx, q: Q[idx], used: nextUsed };
 }
 
+function bomberIdx(x: number, y: number, width = BOMBER_WIDTH): number {
+  return y * width + x;
+}
+
+function bomberCell(state: BomberState, x: number, y: number): BomberCell {
+  if (x < 0 || y < 0 || x >= state.width || y >= state.height) return "wall";
+  return state.cells[bomberIdx(x, y, state.width)] ?? "empty";
+}
+
+function isStartSafeZone(x: number, y: number): boolean {
+  return BOMBER_STARTS.some((start) => Math.abs(start.x - x) + Math.abs(start.y - y) <= 1);
+}
+
+function makeBomberCells(): BomberCell[] {
+  const cells: BomberCell[] = [];
+  for (let y = 0; y < BOMBER_HEIGHT; y++) {
+    for (let x = 0; x < BOMBER_WIDTH; x++) {
+      const border = x === 0 || y === 0 || x === BOMBER_WIDTH - 1 || y === BOMBER_HEIGHT - 1;
+      const pillar = x % 2 === 0 && y % 2 === 0;
+      if (border || pillar) cells.push("wall");
+      else if (isStartSafeZone(x, y)) cells.push("empty");
+      else cells.push((x * 17 + y * 31) % 5 === 0 ? "empty" : "block");
+    }
+  }
+  return cells;
+}
+
+function createBomberState(players: Player[]): BomberState {
+  const bomberPlayers: Record<string, BomberPlayerState> = {};
+  players.slice(0, MAX_PLAYERS).forEach((player, index) => {
+    const start = BOMBER_STARTS[index] ?? BOMBER_STARTS[0];
+    bomberPlayers[player.id] = { x: start.x, y: start.y, lives: 3, alive: true };
+  });
+  return {
+    width: BOMBER_WIDTH,
+    height: BOMBER_HEIGHT,
+    cells: makeBomberCells(),
+    players: bomberPlayers,
+    bombs: [],
+    explosions: [],
+    startedAt: now(),
+    updatedAt: now()
+  };
+}
+
+function bomberAliveIds(room: Room): string[] {
+  const state = room.bomber;
+  if (!state) return [];
+  return sortedPlayers(room.players)
+    .filter((p) => state.players[p.id]?.alive && p.lives > 0)
+    .map((p) => p.id);
+}
+
+function bomberBombAt(state: BomberState, x: number, y: number): boolean {
+  return state.bombs.some((bomb) => bomb.x === x && bomb.y === y);
+}
+
+function bomberPlayerAt(state: BomberState, x: number, y: number, exceptId = ""): boolean {
+  return Object.entries(state.players).some(([id, player]) =>
+    id !== exceptId && player.alive && player.x === x && player.y === y
+  );
+}
+
+function canMoveTo(state: BomberState, x: number, y: number, playerId: string): boolean {
+  return bomberCell(state, x, y) === "empty" &&
+    !bomberBombAt(state, x, y) &&
+    !bomberPlayerAt(state, x, y, playerId);
+}
+
+function explosionCellsFor(state: BomberState, bomb: BomberBomb): ArenaSlotPoint[] {
+  const cells: ArenaSlotPoint[] = [{ x: bomb.x, y: bomb.y }];
+  const dirs = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 }
+  ];
+  dirs.forEach((dir) => {
+    for (let step = 1; step <= bomb.range; step++) {
+      const x = bomb.x + dir.x * step;
+      const y = bomb.y + dir.y * step;
+      const cell = bomberCell(state, x, y);
+      if (cell === "wall") break;
+      cells.push({ x, y });
+      if (cell === "block") break;
+    }
+  });
+  return cells;
+}
+
+function applyBomberDamage(playersIn: Record<string, Player>, state: BomberState, cells: ArenaSlotPoint[]): Record<string, Player> {
+  const players = { ...playersIn };
+  const stamp = now();
+  Object.entries(state.players).forEach(([id, bp]) => {
+    if (!bp.alive) return;
+    if (stamp - Number(bp.lastHitAt || 0) < BOMBER_HIT_COOLDOWN_MS) return;
+    const hit = cells.some((cell) => cell.x === bp.x && cell.y === bp.y);
+    if (!hit) return;
+    bp.lives = Math.max(0, bp.lives - 1);
+    bp.lastHitAt = stamp;
+    const player = players[id];
+    if (player) {
+      players[id] = { ...player, lives: bp.lives };
+      if (bp.lives <= 0) {
+        bp.alive = false;
+        bp.lastHitAt = stamp;
+        players[id].eliminatedAt = stamp;
+      }
+    }
+  });
+  return players;
+}
+
+function settleBomberRoom(room: Room, nextState: BomberState, players: Record<string, Player>): Room {
+  const aliveIds = Object.entries(nextState.players)
+    .filter(([, p]) => p.alive && p.lives > 0)
+    .map(([id]) => id)
+    .filter((id) => isFreshPlayer(players[id]));
+  if (aliveIds.length <= 1) {
+    return {
+      ...room,
+      players,
+      bomber: nextState,
+      status: "finished",
+      winnerId: aliveIds[0] ?? null,
+      updatedAt: now()
+    };
+  }
+  return { ...room, players, bomber: nextState, updatedAt: now() };
+}
+
+function tickBomberRoom(room: Room): Room | null {
+  const state = room.bomber;
+  if (!state || room.status !== "playing") return null;
+  const stamp = now();
+  const exploding = state.bombs.filter((bomb) => bomb.explodeAt <= stamp);
+  const hasExpiredExplosions = state.explosions.some((explosion) => explosion.expiresAt <= stamp);
+  if (!exploding.length && !hasExpiredExplosions) return null;
+  let nextState: BomberState = {
+    ...state,
+    cells: [...state.cells],
+    bombs: state.bombs.filter((bomb) => bomb.explodeAt > stamp),
+    explosions: state.explosions.filter((explosion) => explosion.expiresAt > stamp),
+    players: Object.fromEntries(Object.entries(state.players).map(([id, p]) => [id, { ...p }]))
+  };
+  let players = { ...room.players };
+  exploding.forEach((bomb) => {
+    const cells = explosionCellsFor(nextState, bomb);
+    cells.forEach((cell) => {
+      const idx = bomberIdx(cell.x, cell.y, nextState.width);
+      if (nextState.cells[idx] === "block") nextState.cells[idx] = "empty";
+    });
+    nextState.explosions.push({
+      id: uid(),
+      cells,
+      createdAt: stamp,
+      expiresAt: stamp + BOMBER_EXPLOSION_MS
+    });
+    players = applyBomberDamage(players, nextState, cells);
+    playBoom();
+    triggerScreenImpact("boom");
+  });
+  nextState.updatedAt = stamp;
+  return settleBomberRoom(room, nextState, players);
+}
+
+async function updateBomber(mutator: (room: Room) => Room | null) {
+  if (localMode && localRoom) {
+    const nextRoom = mutator(normalizeRoom(localRoom));
+    if (!nextRoom) return;
+    localRoom = nextRoom;
+    GS = nextRoom;
+    afterRoomMutation();
+    return;
+  }
+  if (!salaRef) return;
+  const snap = await salaRef.once("value");
+  const room = normalizeRoom(snap.val());
+  const nextRoom = mutator(room);
+  if (!nextRoom) return;
+  await salaRef.update({
+    players: nextRoom.players,
+    bomber: nextRoom.bomber,
+    status: nextRoom.status,
+    winnerId: nextRoom.winnerId ?? null,
+    updatedAt: nextRoom.updatedAt ?? now()
+  });
+}
+
+function moveBomberPlayer(dx: number, dy: number) {
+  if (GS.status !== "playing" || !GS.bomber || !ME.id) return;
+  void updateBomber((room) => {
+    const state = room.bomber;
+    const bp = state?.players[ME.id];
+    if (!state || !bp?.alive) return null;
+    const nx = bp.x + dx;
+    const ny = bp.y + dy;
+    if (!canMoveTo(state, nx, ny, ME.id)) return null;
+    const nextState: BomberState = {
+      ...state,
+      players: { ...state.players, [ME.id]: { ...bp, x: nx, y: ny } },
+      updatedAt: now()
+    };
+    return { ...room, bomber: nextState, updatedAt: now() };
+  });
+}
+
+function placeBomberBomb() {
+  if (GS.status !== "playing" || !GS.bomber || !ME.id) return;
+  void updateBomber((room) => {
+    const state = room.bomber;
+    const bp = state?.players[ME.id];
+    if (!state || !bp?.alive) return null;
+    if (state.bombs.some((bomb) => bomb.ownerId === ME.id)) return null;
+    if (bomberBombAt(state, bp.x, bp.y)) return null;
+    const stamp = now();
+    const bomb: BomberBomb = {
+      id: uid(),
+      ownerId: ME.id,
+      x: bp.x,
+      y: bp.y,
+      placedAt: stamp,
+      explodeAt: stamp + BOMBER_BOMB_MS,
+      range: 2
+    };
+    return {
+      ...room,
+      bomber: { ...state, bombs: [...state.bombs, bomb], updatedAt: stamp },
+      updatedAt: stamp
+    };
+  });
+}
+
+function startBomberTick() {
+  if (bomberTickInterval || GS.status !== "playing") return;
+  bomberTickInterval = window.setInterval(() => {
+    if (GS.status !== "playing" || !GS.bomber) {
+      stopBomberTick();
+      return;
+    }
+    if (ME.host || localMode) {
+      void updateBomber((room) => tickBomberRoom(room));
+    }
+  }, 220);
+}
+
+function stopBomberTick() {
+  if (!bomberTickInterval) return;
+  clearInterval(bomberTickInterval);
+  bomberTickInterval = null;
+}
+
+function bindBomberEvents() {
+  if (bomberEventsBound) return;
+  bomberEventsBound = true;
+  window.addEventListener("keydown", (ev) => {
+    if (GS.status !== "playing") return;
+    const key = ev.key.toLowerCase();
+    if (["arrowup", "w"].includes(key)) { ev.preventDefault(); moveBomberPlayer(0, -1); }
+    else if (["arrowdown", "s"].includes(key)) { ev.preventDefault(); moveBomberPlayer(0, 1); }
+    else if (["arrowleft", "a"].includes(key)) { ev.preventDefault(); moveBomberPlayer(-1, 0); }
+    else if (["arrowright", "d"].includes(key)) { ev.preventDefault(); moveBomberPlayer(1, 0); }
+    else if (key === " " || key === "enter") { ev.preventDefault(); placeBomberBomb(); }
+  });
+  document.addEventListener("pointerdown", (ev) => {
+    const target = ev.target;
+    if (!(target instanceof Element)) return;
+    const btn = target.closest<HTMLElement>("[data-bomber-action]");
+    if (!btn) return;
+    ev.preventDefault();
+    const action = btn.dataset.bomberAction;
+    if (action === "up") moveBomberPlayer(0, -1);
+    else if (action === "down") moveBomberPlayer(0, 1);
+    else if (action === "left") moveBomberPlayer(-1, 0);
+    else if (action === "right") moveBomberPlayer(1, 0);
+    else if (action === "bomb") placeBomberBomb();
+  }, true);
+}
+
 async function startGame() {
   if (localMode && localRoom) {
     localRoom = startRoomState(localRoom);
@@ -641,16 +975,16 @@ function startRoomState(room: Room): Room {
   sortedPlayers(room.players).forEach((p) => {
     players[p.id] = { ...p, lives: 3, score: 0, eliminatedAt: null, online: true };
   });
-  const first = sortedPlayers(players)[0];
-  const { idx, q, used } = chooseQuestion([]);
+  const activePlayers = sortedPlayers(players).slice(0, MAX_PLAYERS);
   return {
     ...room,
     status: "playing",
     players,
-    currentTurn: first?.id ?? null,
-    currentQIndex: idx,
-    currentQ: q,
-    usedQ: used,
+    bomber: createBomberState(activePlayers),
+    currentTurn: null,
+    currentQIndex: null,
+    currentQ: null,
+    usedQ: [],
     turnStartedAt: now(),
     roundCount: 1,
     eliminationOrder: [],
@@ -850,129 +1184,103 @@ function setBombFuseProgress(ratio: number) {
 }
 
 function renderGame() {
-  const circle = el<HTMLDivElement>("players-circle");
-  const bomb = el<HTMLDivElement>("bomb-el");
-  const players = sortedPlayers(GS.players);
-  const count = players.length;
-  const isMobile = window.innerWidth < 600;
-  const stage = arenaStageSize(isMobile);
-  circle.style.setProperty("--arena-stage-width", `${stage.width}px`);
-  circle.style.setProperty("--arena-stage-height", `${stage.height}px`);
-  const arrow = el<HTMLDivElement>("turn-arrow");
-  const isMyTurn = GS.currentTurn === ME.id && GS.status === "playing";
-  const previousTurnId = prevTurnId;
-  const turnChanged = previousTurnId !== GS.currentTurn;
-  const bombPoints = new Map<string, BombPoint>();
-  const layout = players.map((p, i) => {
-    const layer = PLAYER_LAYER_SLOTS[i % PLAYER_LAYER_SLOTS.length];
-    const point = {
-      x: layer.x / ARENA_ASSET_WIDTH,
-      y: layer.y / ARENA_ASSET_HEIGHT
-    };
-    const x = (layer.x / ARENA_ASSET_WIDTH - 0.5) * stage.width;
-    const y = (layer.y / ARENA_ASSET_HEIGHT - 0.5) * stage.height;
-    const angle = Math.atan2(y, x) * 180 / Math.PI;
-    const bombPoint = pointToBomb(stage, layer.bomb);
-    const characterWidth = stage.width * layer.width / ARENA_ASSET_WIDTH;
-    const characterHeight = stage.height * layer.height / ARENA_ASSET_HEIGHT;
-    return { p, point, angle, x, y, bombPoint, layer, characterWidth, characterHeight };
+  const state = GS.bomber;
+  const board = el<HTMLDivElement>("players-circle");
+  const hud = el<HTMLDivElement>("q-card");
+  if (!state) {
+    board.innerHTML = "";
+    hud.style.display = "none";
+    return;
+  }
+
+  bindBomberEvents();
+  startBomberTick();
+  stopTimer();
+  el<HTMLSpanElement>("round-val").textContent = String(Math.max(1, Math.floor((now() - state.startedAt) / 60_000) + 1));
+  el<HTMLDivElement>("scr-game").classList.add("bomber-mode");
+
+  const players = sortedPlayers(GS.players).slice(0, MAX_PLAYERS);
+  const explosionCells = new Set<string>();
+  state.explosions.forEach((explosion) => {
+    explosion.cells.forEach((cell) => explosionCells.add(`${cell.x},${cell.y}`));
   });
-  const activeLayout = layout.find((item) => item.p.id === GS.currentTurn);
-  const previousLayout = layout.find((item) => item.p.id === previousTurnId);
-  const activeDepth = activeLayout ? Math.max(0, Math.min(1, activeLayout.point.y)) : 0.5;
-  circle.style.setProperty("--active-depth", activeDepth.toFixed(3));
-  bomb.style.zIndex = String(90 + Math.round(activeDepth * 120));
-  let targetBombPoint: BombPoint = { x: 0, y: 0 };
-  
-  circle.querySelectorAll(".p-slot").forEach(s => s.remove());
-  arrow.style.display = "none";
-  el<HTMLSpanElement>("round-val").textContent = String(GS.roundCount || 1);
-  el<HTMLSpanElement>("arena-round-val").textContent = String(GS.roundCount || 1);
-  el<HTMLDivElement>("scr-game").classList.toggle("no-question", !isMyTurn);
 
-  layout.forEach(({ p, point, angle, x, y, bombPoint, layer, characterWidth, characterHeight }, i) => {
-    const isTurn = p.id === GS.currentTurn;
-    const isEliminated = p.lives <= 0;
-    const isHost = p.id === GS.hostId;
-    const isThrowingFrom = turnChanged && previousTurnId === p.id && !isTurn && !isEliminated;
-    const isCatchingTo = turnChanged && Boolean(previousTurnId) && isTurn && !isEliminated;
-    const previousLife = previousLives.get(p.id);
-    const lostLife = previousLife !== undefined && p.lives < previousLife;
-    const visualState = playerVisualState(p, isTurn, isThrowingFrom, isCatchingTo, lostLife);
-    const slotColor = SLOT_COLORS[i % SLOT_COLORS.length];
-    const depthT = Math.max(0, Math.min(1, point.y));
-    const depthZ = 40 + Math.round(depthT * 90) + (isTurn ? 24 : 0);
+  const playerByCell = new Map<string, Player>();
+  players.forEach((player) => {
+    const bp = state.players[player.id];
+    if (bp?.alive) playerByCell.set(`${bp.x},${bp.y}`, player);
+  });
+  const bombsByCell = new Map<string, BomberBomb>();
+  state.bombs.forEach((bomb) => bombsByCell.set(`${bomb.x},${bomb.y}`, bomb));
 
-    bombPoints.set(p.id, bombPoint);
-
-    const slot = document.createElement("div");
-    slot.className = `p-slot arena-slot state-${visualState} ${isTurn ? "active-turn" : ""} ${isEliminated ? "eliminated" : ""} ${isThrowingFrom ? "throwing-from" : ""} ${isCatchingTo ? "catching-to" : ""}`;
-    slot.style.width = `${characterWidth.toFixed(1)}px`;
-    slot.style.height = `${characterHeight.toFixed(1)}px`;
-    slot.style.setProperty("--slot-x", `${x.toFixed(1)}px`);
-    slot.style.setProperty("--slot-y", `${y.toFixed(1)}px`);
-    slot.style.transform = `translate(calc(-50% + ${x.toFixed(1)}px), calc(-50% + ${y.toFixed(1)}px))`;
-    slot.style.zIndex = String(depthZ);
-    slot.style.setProperty("--depth-y", depthT.toFixed(3));
-    slot.style.setProperty("--slot-color", slotColor);
-    slot.dataset.playerId = p.id;
-    slot.dataset.state = visualState;
-    slot.innerHTML = `
-      <div class="arena-player-marker">
-        ${isHost ? '<div class="p-crown">HOST</div>' : ''}
-        <img class="arena-character-art" src="${esc(layer.asset)}" alt="" draggable="false">
-        <span class="arena-player-dot" aria-hidden="true"></span>
+  const cellsHtml = state.cells.map((cell, idx) => {
+    const x = idx % state.width;
+    const y = Math.floor(idx / state.width);
+    const key = `${x},${y}`;
+    const player = playerByCell.get(key);
+    const bomb = bombsByCell.get(key);
+    const bp = player ? state.players[player.id] : null;
+    const slotIndex = player ? players.findIndex((p) => p.id === player.id) : -1;
+    const className = [
+      "bomber-cell",
+      `cell-${cell}`,
+      explosionCells.has(key) ? "cell-explosion" : "",
+      player ? "has-player" : "",
+      player?.id === ME.id ? "is-me" : ""
+    ].filter(Boolean).join(" ");
+    return `
+      <div class="${className}" data-x="${x}" data-y="${y}">
+        ${cell === "block" ? '<span class="bomber-crate"></span>' : ""}
+        ${bomb ? '<span class="bomber-bomb" aria-label="Bomba"></span>' : ""}
+        ${player ? `
+          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]}">
+            <span class="bomber-avatar">${avatarHtml(player.skinIndex)}</span>
+          </span>
+        ` : ""}
       </div>
-      <div class="p-name">${esc(p.nick)}</div>
-      <div class="p-lives" aria-label="${p.lives} vidas">${renderLives(p.lives)}</div>
     `;
-    circle.appendChild(slot);
-    
-    if (isTurn) {
-      arrow.style.display = "block";
-      arrow.style.transform = `rotate(${angle + 90}deg)`;
-      targetBombPoint = bombPoint;
-    }
-  });
+  }).join("");
 
-  const visiblePlayerIds = new Set(players.map((p) => p.id));
-  players.forEach((p) => previousLives.set(p.id, p.lives));
-  Array.from(previousLives.keys()).forEach((id) => {
-    if (!visiblePlayerIds.has(id)) previousLives.delete(id);
-  });
+  board.style.setProperty("--bomber-cols", String(state.width));
+  board.style.setProperty("--bomber-rows", String(state.height));
+  board.innerHTML = `
+    <div class="bomber-board" role="grid" aria-label="Arena Bomberman">
+      ${cellsHtml}
+    </div>
+  `;
 
-  if (turnChanged) {
-    const fromPoint = previousTurnId ? bombPoints.get(previousTurnId) : undefined;
-    if (previousTurnId && GS.currentTurn && fromPoint) {
-      const turnAfterPass = GS.currentTurn;
-      animateBombPass(bomb, fromPoint, targetBombPoint);
-      window.setTimeout(() => {
-        circle.querySelectorAll(".throwing-from,.catching-to").forEach((slot) => {
-          slot.classList.remove("throwing-from", "catching-to");
-        });
-        circle.querySelectorAll<HTMLElement>(".state-throwingBomb,.state-catchingBomb").forEach((slot) => {
-          const nextState = slot.dataset.playerId === turnAfterPass ? "holdingBomb" : "idle";
-          slot.classList.remove("state-throwingBomb", "state-catchingBomb", "state-idle", "state-holdingBomb");
-          slot.classList.add(`state-${nextState}`);
-          slot.dataset.state = nextState;
-        });
-        if (GS.status === "playing" && GS.currentTurn === turnAfterPass) renderGame();
-      }, BOMB_PASS_MS + 140);
-    } else {
-      bomb.classList.remove("bomb-throwing", "pass-pop");
-      bomb.style.transition = "";
-      bomb.style.transform = bombTransform(targetBombPoint);
-    }
-    prevTurnId = GS.currentTurn;
-  } else {
-    bomb.style.transform = bombTransform(targetBombPoint);
-  }
+  const myBomber = state.players[ME.id];
+  const aliveCount = bomberAliveIds(GS).length;
+  const scoreboard = players.map((player, index) => {
+    const bp = state.players[player.id];
+    const lives = bp?.lives ?? player.lives;
+    return `
+      <div class="bomber-score ${player.id === ME.id ? "me" : ""} ${bp?.alive ? "" : "out"}" style="--slot-color:${SLOT_COLORS[index % SLOT_COLORS.length]}">
+        <span>${avatarHtml(player.skinIndex)}</span>
+        <strong>${esc(player.nick)}</strong>
+        <em>${renderLives(lives)}</em>
+      </div>
+    `;
+  }).join("");
 
-  if (isMyTurn) {
-    renderQuestion();
-  } else {
-    el<HTMLDivElement>("q-card").style.display = "none";
-  }
+  hud.style.display = "block";
+  hud.className = "q-container bomber-hud";
+  hud.innerHTML = `
+    <div class="bomber-hud-top">
+      <div>
+        <span class="lbl-small">Jogadores vivos</span>
+        <strong>${aliveCount}</strong>
+      </div>
+      <button class="btn btn-gold bomber-bomb-action" data-bomber-action="bomb" ${myBomber?.alive ? "" : "disabled"}>BOMBA</button>
+    </div>
+    <div class="bomber-scoreboard">${scoreboard}</div>
+    <div class="bomber-controls" aria-label="Controles">
+      <button data-bomber-action="up">^</button>
+      <button data-bomber-action="left">&lt;</button>
+      <button data-bomber-action="down">v</button>
+      <button data-bomber-action="right">&gt;</button>
+    </div>
+  `;
 }
 
 function renderQuestion() {
@@ -1153,6 +1461,7 @@ function afterRoomMutation() {
 
 function renderWin() {
   stopTimer();
+  stopBomberTick();
   const overlay = el<HTMLDivElement>("win-overlay");
   const winner = GS.winnerId ? GS.players[GS.winnerId] : null;
   el<HTMLDivElement>("winner-name").textContent = winner?.nick ?? "Sem vencedor";
@@ -1256,6 +1565,7 @@ async function copiarCodigo() {
 
 function cleanupRoom(updateRemote = true) {
   stopTimer();
+  stopBomberTick();
   if (presenceInterval) {
     clearInterval(presenceInterval);
     presenceInterval = null;
