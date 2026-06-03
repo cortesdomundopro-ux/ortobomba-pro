@@ -186,6 +186,14 @@ function avatarHtml(skinIndex: number): string {
   return `<span class="avatar-head emoji-avatar">${PLAYER_EMOJIS[idx]}</span>`;
 }
 
+function playerAssetForSkin(skinIndex: number): string {
+  return `/arena/players/player-${skinIndexOf(skinIndex) + 1}.png`;
+}
+
+function playerArtHtml(skinIndex: number, className = "player-art-avatar"): string {
+  return `<img class="${className}" src="${playerAssetForSkin(skinIndex)}" alt="" draggable="false">`;
+}
+
 function normalizeReactionEmoji(raw: string): string {
   const emoji = String(raw || "").trim();
   return REACTION_EMOJIS.includes(emoji) ? emoji : DEFAULT_REACTION;
@@ -1248,7 +1256,7 @@ function renderGame() {
         ${bomb ? '<span class="bomber-bomb" aria-label="Bomba"></span>' : ""}
         ${player ? `
           <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]}">
-            <span class="bomber-avatar">${avatarHtml(player.skinIndex)}</span>
+            ${playerArtHtml(player.skinIndex, "bomber-character-art")}
           </span>
         ` : ""}
       </div>
@@ -1270,7 +1278,7 @@ function renderGame() {
     const lives = bp?.lives ?? player.lives;
     return `
       <div class="bomber-score ${player.id === ME.id ? "me" : ""} ${bp?.alive ? "" : "out"}" style="--slot-color:${SLOT_COLORS[index % SLOT_COLORS.length]}">
-        <span>${avatarHtml(player.skinIndex)}</span>
+        <span class="bomber-score-art">${playerArtHtml(player.skinIndex, "bomber-score-character")}</span>
         <strong>${esc(player.nick)}</strong>
         <em>${renderLives(lives)}</em>
       </div>
