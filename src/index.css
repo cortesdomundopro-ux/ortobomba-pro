@@ -995,7 +995,7 @@ button {
 .bomber-cell.cell-explosion {
   z-index: 8;
   background:
-    radial-gradient(circle, #fff8c7 0 22%, #ffb01f 35%, #ff3f19 64%, rgba(255, 63, 25, 0.12) 78%),
+    radial-gradient(circle, #fff8c7 0 18%, #ffb01f 34%, #ff3f19 64%, rgba(255, 63, 25, 0.12) 78%),
     #ffb21d;
   animation: bomberBlast 0.22s ease-in-out infinite alternate;
 }
@@ -1003,10 +1003,59 @@ button {
 .bomber-cell.cell-explosion::after {
   content: "";
   position: absolute;
-  inset: 10%;
+  z-index: 5;
+  inset: 12%;
   border-radius: 999px;
-  background: radial-gradient(circle, #fff7b0, #ff6b1a 56%, transparent 70%);
+  background: radial-gradient(circle, #fff7b0, #ff6b1a 56%, transparent 72%);
   filter: blur(1px);
+}
+
+.bomber-cell.explosion-horizontal::after,
+.bomber-cell.explosion-end-left::after,
+.bomber-cell.explosion-end-right::after {
+  inset: 28% -10%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 68, 24, 0.15), #ff5b19 18%, #fff5a8 50%, #ff5b19 82%, rgba(255, 68, 24, 0.15));
+}
+
+.bomber-cell.explosion-vertical::after,
+.bomber-cell.explosion-end-up::after,
+.bomber-cell.explosion-end-down::after {
+  inset: -10% 28%;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 68, 24, 0.15), #ff5b19 18%, #fff5a8 50%, #ff5b19 82%, rgba(255, 68, 24, 0.15));
+}
+
+.bomber-cell.explosion-center::after {
+  inset: 4%;
+  background:
+    radial-gradient(circle, #fff8bf 0 18%, #ffcb22 31%, #ff501b 58%, transparent 74%),
+    linear-gradient(90deg, transparent 8%, #ff611e 30%, #fff3a5 50%, #ff611e 70%, transparent 92%),
+    linear-gradient(180deg, transparent 8%, #ff611e 30%, #fff3a5 50%, #ff611e 70%, transparent 92%);
+}
+
+.bomber-cell.explosion-end-left::before,
+.bomber-cell.explosion-end-right::before,
+.bomber-cell.explosion-end-up::before,
+.bomber-cell.explosion-end-down::before {
+  content: "";
+  position: absolute;
+  z-index: 6;
+  width: 42%;
+  height: 42%;
+  border-radius: 999px;
+  background: radial-gradient(circle, #fff9c4, #ff6d1b 62%, transparent 72%);
+  filter: blur(0.5px);
+}
+
+.bomber-cell.explosion-end-left::before { left: -8%; }
+.bomber-cell.explosion-end-right::before { right: -8%; }
+.bomber-cell.explosion-end-up::before { top: -8%; }
+.bomber-cell.explosion-end-down::before { bottom: -8%; }
+
+.bomber-cell.cell-explosion.cell-empty::before {
+  border: 0;
+  pointer-events: none;
 }
 
 .bomber-bomb {
@@ -1141,6 +1190,31 @@ button {
 
 .bomber-player.step-moving {
   animation: bomberStep var(--step-ms, 150ms) cubic-bezier(0.22, 0.8, 0.2, 1) both;
+}
+
+.bomber-player.state-idle .bomber-character-art {
+  animation: bomberIdle 1.15s ease-in-out infinite alternate;
+}
+
+.bomber-player.step-moving .bomber-character-art {
+  animation: bomberWalk var(--step-ms, 150ms) ease-in-out both;
+}
+
+.bomber-player.state-hit .bomber-character-art {
+  animation: bomberHit 0.42s ease both;
+}
+
+.bomber-player.state-defeat {
+  opacity: 0.42;
+  filter: grayscale(0.8) drop-shadow(0 7px 8px rgba(0, 0, 0, 0.56));
+}
+
+.bomber-player.state-defeat .bomber-character-art {
+  transform: rotate(78deg) scale(0.82);
+}
+
+.bomber-player.state-victory .bomber-character-art {
+  animation: bomberVictory 0.72s ease-in-out infinite alternate;
 }
 
 .bomber-hud {
@@ -1282,6 +1356,28 @@ button {
 @keyframes powerupFloat {
   from { transform: translateY(2px) scale(0.96); }
   to { transform: translateY(-3px) scale(1.04); }
+}
+
+@keyframes bomberIdle {
+  from { transform: translateY(0) scale(1); }
+  to { transform: translateY(-2px) scale(1.015); }
+}
+
+@keyframes bomberWalk {
+  0% { transform: translateY(0) rotate(-2deg) scale(1); }
+  48% { transform: translateY(-5px) rotate(2deg) scale(1.04); }
+  100% { transform: translateY(0) rotate(0) scale(1); }
+}
+
+@keyframes bomberHit {
+  0%, 100% { transform: translateX(0) scale(1); filter: brightness(1); }
+  25% { transform: translateX(-4px) scale(1.05); filter: brightness(1.8); }
+  52% { transform: translateX(4px) scale(0.96); filter: brightness(1.35); }
+}
+
+@keyframes bomberVictory {
+  from { transform: translateY(0) scale(1.02); }
+  to { transform: translateY(-7px) scale(1.08); filter: brightness(1.22); }
 }
 
 @keyframes bomberStep {

@@ -878,19 +878,21 @@ function tickBomberRoom(room: Room): Room | null {
   const state = room.bomber;
   if (!state || room.status !== "playing") return null;
   const stamp = now();
-  const exploding = state.bombs.filter((bomb) => bomb.explodeAt <= stamp);
+  const exploding: BomberBomb[] = state.bombs.filter((bomb) => bomb.explodeAt <= stamp);
+  const explodingIds = new Set(exploding.map((bomb) => bomb.id));
   const hasExpiredExplosions = state.explosions.some((explosion) => explosion.expiresAt <= stamp);
   if (!exploding.length && !hasExpiredExplosions) return null;
   let nextState: BomberState = {
     ...state,
     cells: [...state.cells],
-    bombs: state.bombs.filter((bomb) => bomb.explodeAt > stamp),
+    bombs: state.bombs.filter((bomb) => !explodingIds.has(bomb.id)),
     explosions: state.explosions.filter((explosion) => explosion.expiresAt > stamp),
     powerups: [...state.powerups],
     players: Object.fromEntries(Object.entries(state.players).map(([id, p]) => [id, { ...p }]))
   };
   let players = { ...room.players };
-  exploding.forEach((bomb) => {
+  for (let i = 0; i < exploding.length; i++) {
+    const bomb = exploding[i];
     const cells = explosionCellsFor(nextState, bomb);
     cells.forEach((cell) => {
       const idx = bomberIdx(cell.x, cell.y, nextState.width);
@@ -902,6 +904,13 @@ function tickBomberRoom(room: Room): Room | null {
         const powerup = maybeCreatePowerup(cell.x, cell.y);
         if (powerup) nextState.powerups.push(powerup);
       }
+      const chainedBombs = nextState.bombs.filter((candidate) => candidate.x === cell.x && candidate.y === cell.y);
+      chainedBombs.forEach((candidate) => {
+        if (explodingIds.has(candidate.id)) return;
+        explodingIds.add(candidate.id);
+        exploding.push(candidate);
+        nextState.bombs = nextState.bombs.filter((item) => item.id !== candidate.id);
+      });
     });
     nextState.explosions.push({
       id: uid(),
@@ -912,7 +921,7 @@ function tickBomberRoom(room: Room): Room | null {
     players = applyBomberDamage(players, nextState, cells);
     playBoom();
     triggerScreenImpact("boom");
-  });
+  }
   nextState.updatedAt = stamp;
   return settleBomberRoom(room, nextState, players);
 }
@@ -1295,6 +1304,28 @@ function powerupLabel(kind: BomberPowerupKind): string {
   return "S";
 }
 
+function explosionClassFor(cells: Set<string>, x: number, y: number): string {
+  if (!cells.has(`${x},${y}`)) return "";
+  const left = cells.has(`${x - 1},${y}`);
+  const right = cells.has(`${x + 1},${y}`);
+  const up = cells.has(`${x},${y - 1}`);
+  const down = cells.has(`${x},${y + 1}`);
+  const horizontal = left || right;
+  const vertical = up || down;
+  if (horizontal && vertical) return "explosion-center";
+  if (horizontal) {
+    if (!left) return "explosion-end-left";
+    if (!right) return "explosion-end-right";
+    return "explosion-horizontal";
+  }
+  if (vertical) {
+    if (!up) return "explosion-end-up";
+    if (!down) return "explosion-end-down";
+    return "explosion-vertical";
+  }
+  return "explosion-center";
+}
+
 function renderGame() {
   const state = GS.bomber;
   const board = el<HTMLDivElement>("players-circle");
@@ -1340,11 +1371,20 @@ function renderGame() {
     const stepDx = previousPosition && player ? previousPosition.x - x : 0;
     const stepDy = previousPosition && player ? previousPosition.y - y : 0;
     const isStepMove = Boolean(player && previousPosition && Math.abs(stepDx) + Math.abs(stepDy) === 1);
+    const explosionClass = explosionClassFor(explosionCells, x, y);
+    const playerHit = Boolean(bp?.lastHitAt && now() - bp.lastHitAt < 520);
+    const playerStateClass = player
+      ? GS.status === "finished" && GS.winnerId === player.id
+        ? "state-victory"
+        : bp?.alive
+          ? playerHit ? "state-hit" : "state-idle"
+          : "state-defeat"
+      : "";
     const className = [
       "bomber-cell",
       `cell-${cell}`,
       (x + y) % 2 === 0 ? "tile-a" : "tile-b",
-      explosionCells.has(key) ? "cell-explosion" : "",
+      explosionClass ? `cell-explosion ${explosionClass}` : "",
       player ? "has-player" : "",
       player?.id === ME.id ? "is-me" : ""
     ].filter(Boolean).join(" ");
@@ -1354,7 +1394,7 @@ function renderGame() {
         ${bomb ? '<span class="bomber-bomb" aria-label="Bomba"></span>' : ""}
         ${powerup && cell === "empty" ? `<span class="bomber-powerup powerup-${powerup.kind}" aria-label="Power-up ${powerup.kind}">${powerupLabel(powerup.kind)}</span>` : ""}
         ${player ? `
-          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${bomberStepMsFor(bp)}ms">
+          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${playerStateClass} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${bomberStepMsFor(bp)}ms">
             ${playerArtHtml(player.skinIndex, "bomber-character-art")}
           </span>
         ` : ""}
