@@ -22,6 +22,7 @@ const BOMBER_HEIGHT = 11;
 const BOMBER_BOMB_MS = 2200;
 const BOMBER_EXPLOSION_MS = 650;
 const BOMBER_HIT_COOLDOWN_MS = 900;
+const BOMBER_STEP_MS = 150;
 const BOMBER_STARTS: ArenaSlotPoint[] = [
   { x: 1, y: 1 },
   { x: BOMBER_WIDTH - 2, y: 1 },
@@ -136,6 +137,9 @@ let lastTickSecond: number | null = null;
 let reactionEventsBound = false;
 let bomberEventsBound = false;
 let bomberTickInterval: ReturnType<typeof setInterval> | null = null;
+let bomberMovePending = false;
+let bomberStepLockedUntil = 0;
+const previousBomberPositions = new Map<string, ArenaSlotPoint>();
 let lastRoomSignature = "";
 let runtimePlayerId = uid();
 const REACTION_EMOJIS = ["\u{1F602}", "\u{1F525}", "\u{1F4A3}"];
@@ -889,6 +893,9 @@ async function updateBomber(mutator: (room: Room) => Room | null) {
 
 function moveBomberPlayer(dx: number, dy: number) {
   if (GS.status !== "playing" || !GS.bomber || !ME.id) return;
+  if (bomberMovePending || now() < bomberStepLockedUntil) return;
+  bomberMovePending = true;
+  let moved = false;
   void updateBomber((room) => {
     const state = room.bomber;
     const bp = state?.players[ME.id];
@@ -896,12 +903,23 @@ function moveBomberPlayer(dx: number, dy: number) {
     const nx = bp.x + dx;
     const ny = bp.y + dy;
     if (!canMoveTo(state, nx, ny, ME.id)) return null;
+    moved = true;
     const nextState: BomberState = {
       ...state,
       players: { ...state.players, [ME.id]: { ...bp, x: nx, y: ny } },
       updatedAt: now()
     };
     return { ...room, bomber: nextState, updatedAt: now() };
+  }).finally(() => {
+    if (!moved) {
+      bomberMovePending = false;
+      return;
+    }
+    bomberStepLockedUntil = now() + BOMBER_STEP_MS;
+    window.setTimeout(() => {
+      bomberMovePending = false;
+      bomberStepLockedUntil = 0;
+    }, BOMBER_STEP_MS);
   });
 }
 
@@ -1243,6 +1261,10 @@ function renderGame() {
     const bomb = bombsByCell.get(key);
     const bp = player ? state.players[player.id] : null;
     const slotIndex = player ? players.findIndex((p) => p.id === player.id) : -1;
+    const previousPosition = player ? previousBomberPositions.get(player.id) : undefined;
+    const stepDx = previousPosition && player ? previousPosition.x - x : 0;
+    const stepDy = previousPosition && player ? previousPosition.y - y : 0;
+    const isStepMove = Boolean(player && previousPosition && Math.abs(stepDx) + Math.abs(stepDy) === 1);
     const className = [
       "bomber-cell",
       `cell-${cell}`,
@@ -1255,13 +1277,19 @@ function renderGame() {
         ${cell === "block" ? '<span class="bomber-crate"></span>' : ""}
         ${bomb ? '<span class="bomber-bomb" aria-label="Bomba"></span>' : ""}
         ${player ? `
-          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]}">
+          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${BOMBER_STEP_MS}ms">
             ${playerArtHtml(player.skinIndex, "bomber-character-art")}
           </span>
         ` : ""}
       </div>
     `;
   }).join("");
+
+  players.forEach((player) => {
+    const bp = state.players[player.id];
+    if (bp?.alive) previousBomberPositions.set(player.id, { x: bp.x, y: bp.y });
+    else previousBomberPositions.delete(player.id);
+  });
 
   board.style.setProperty("--bomber-cols", String(state.width));
   board.style.setProperty("--bomber-rows", String(state.height));
@@ -1599,6 +1627,9 @@ function cleanupRoom(updateRemote = true) {
   salaRef = null;
   reactionRef = null;
   lastRoomSignature = "";
+  bomberMovePending = false;
+  bomberStepLockedUntil = 0;
+  previousBomberPositions.clear();
   localMode = false;
   ME.salaId = "";
   ME.host = false;
