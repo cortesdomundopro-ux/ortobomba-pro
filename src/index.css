@@ -869,17 +869,20 @@ button {
   width: min(96vw, 980px);
   height: auto;
   aspect-ratio: 13 / 11;
-  padding: 12px;
-  border: 3px solid rgba(255, 255, 255, 0.18);
-  border-radius: 18px;
+  padding: clamp(8px, 1.2vw, 16px);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
   background:
-    linear-gradient(90deg, rgba(255, 199, 0, 0.82) 0 1.2%, transparent 1.2% 98.8%, rgba(255, 199, 0, 0.82) 98.8%),
-    linear-gradient(180deg, rgba(16, 29, 44, 0.98), rgba(6, 10, 22, 0.98));
+    linear-gradient(90deg, rgba(255, 199, 0, 0.86) 0 1%, transparent 1% 99%, rgba(255, 199, 0, 0.86) 99%),
+    radial-gradient(circle at 12% 12%, rgba(0, 217, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 88% 88%, rgba(255, 79, 184, 0.16), transparent 30%),
+    linear-gradient(180deg, rgba(17, 27, 43, 0.98), rgba(6, 9, 19, 0.98));
   box-shadow:
     0 28px 80px rgba(0, 0, 0, 0.58),
     inset 0 0 0 3px rgba(0, 217, 255, 0.09),
     inset 0 16px 30px rgba(255, 255, 255, 0.05);
-  contain: layout paint style;
+  contain: layout style;
+  overflow: visible;
 }
 
 .bomber-board {
@@ -888,17 +891,20 @@ button {
   display: grid;
   grid-template-columns: repeat(var(--bomber-cols), minmax(0, 1fr));
   grid-template-rows: repeat(var(--bomber-rows), minmax(0, 1fr));
-  gap: 4px;
+  gap: clamp(2px, 0.42vw, 5px);
   isolation: isolate;
-  padding: 6px;
-  border-radius: 12px;
+  padding: clamp(5px, 0.75vw, 9px);
+  border-radius: 14px;
   background:
-    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px),
     linear-gradient(180deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-    #1f2630;
+    linear-gradient(180deg, #384048, #202832 62%, #161c26);
   background-size: calc(100% / var(--bomber-cols)) calc(100% / var(--bomber-rows));
-  box-shadow: inset 0 0 34px rgba(0, 0, 0, 0.42);
-  contain: layout paint style;
+  box-shadow:
+    inset 0 0 34px rgba(0, 0, 0, 0.42),
+    inset 0 2px 0 rgba(255, 255, 255, 0.1);
+  contain: layout style;
+  overflow: visible;
 }
 
 .bomber-cell {
@@ -908,46 +914,48 @@ button {
   min-width: 0;
   min-height: 0;
   overflow: visible;
-  border-radius: 5px;
-  background: #173247;
+  border-radius: 7px;
+  background: #223243;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    inset 0 -4px 0 rgba(0, 0, 0, 0.18);
-  contain: layout paint style;
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -5px 0 rgba(0, 0, 0, 0.2),
+    0 2px 0 rgba(0, 0, 0, 0.2);
+  contain: layout style;
 }
 
 .bomber-cell.cell-empty {
   z-index: 1;
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.10), transparent 25%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.06), transparent 48%),
-    #56565a;
+    radial-gradient(circle at 32% 26%, rgba(255,255,255,0.14), transparent 22%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%),
+    linear-gradient(180deg, #62656a, #44484f 58%, #333841);
 }
 
 .bomber-cell.cell-empty.tile-b {
   background:
-    radial-gradient(circle at 68% 72%, rgba(255,255,255,0.08), transparent 22%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.04), transparent 48%),
-    #414247;
+    radial-gradient(circle at 68% 72%, rgba(255,255,255,0.1), transparent 21%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.05), transparent 42%),
+    linear-gradient(180deg, #55595f, #3c4148 58%, #2f343c);
 }
 
 .bomber-cell.cell-empty::before {
   content: "";
   position: absolute;
   inset: 8%;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
   pointer-events: none;
 }
 
 .bomber-cell.cell-wall {
-  z-index: 7;
+  z-index: 12;
   background:
-    radial-gradient(ellipse at 50% 10%, rgba(255,255,255,0.2), transparent 34%),
-    linear-gradient(180deg, #3f4551, #171a22 64%, #0a0b10);
+    radial-gradient(ellipse at 50% 8%, rgba(255,255,255,0.26), transparent 34%),
+    linear-gradient(180deg, #596170 0 18%, #343a47 18% 60%, #151923 60% 100%);
   box-shadow:
-    0 8px 0 rgba(0, 0, 0, 0.32),
-    0 12px 18px rgba(0, 0, 0, 0.36),
+    0 9px 0 rgba(0, 0, 0, 0.36),
+    0 15px 18px rgba(0, 0, 0, 0.38),
     inset 0 0 0 2px rgba(255, 255, 255, 0.12),
     inset 0 -12px 0 rgba(0, 0, 0, 0.28);
 }
@@ -956,30 +964,37 @@ button {
   content: "";
   width: 62%;
   height: 62%;
-  border-radius: 999px;
+  border-radius: 12px;
   background:
-    radial-gradient(circle at 36% 28%, rgba(255,255,255,0.28), transparent 18%),
-    linear-gradient(180deg, #2f333d, #090a0f);
-  box-shadow: inset 0 -6px 0 rgba(0,0,0,0.28), 0 3px 8px rgba(0,0,0,0.42);
+    linear-gradient(90deg, rgba(255,255,255,0.1) 0 10%, transparent 10% 22%, rgba(255,255,255,0.08) 22% 32%, transparent 32%),
+    radial-gradient(circle at 36% 28%, rgba(255,255,255,0.26), transparent 18%),
+    linear-gradient(180deg, #3a4050, #11141d);
+  box-shadow: inset 0 -7px 0 rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.44);
 }
 
 .bomber-cell.cell-block {
-  z-index: 6;
-  background: #4a4a4d;
+  z-index: 10;
+  background:
+    linear-gradient(180deg, #54565b, #3a3d44 68%, #252a33);
+  box-shadow:
+    0 7px 0 rgba(0, 0, 0, 0.28),
+    0 12px 16px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255,255,255,0.12);
 }
 
 .bomber-crate {
   position: relative;
-  width: 70%;
-  height: 88%;
-  border-radius: 10px 10px 6px 6px;
+  width: 76%;
+  height: 86%;
+  border-radius: 11px 11px 7px 7px;
   background:
-    linear-gradient(180deg, #ff7651 0 16%, #fff2ec 16% 34%, #ff5d3a 34% 55%, #fff2ec 55% 72%, #d93221 72%),
+    linear-gradient(90deg, rgba(0,0,0,0.13) 0 8%, transparent 8% 92%, rgba(255,255,255,0.16) 92%),
+    linear-gradient(180deg, #ff8c65 0 15%, #fff2ec 15% 32%, #ff6042 32% 54%, #fff2ec 54% 71%, #c92f22 71%),
     #f25a39;
   clip-path: polygon(36% 0, 64% 0, 88% 100%, 12% 100%);
   box-shadow:
-    0 8px 0 rgba(88, 13, 8, 0.56),
-    0 11px 18px rgba(0, 0, 0, 0.38),
+    0 8px 0 rgba(88, 13, 8, 0.62),
+    0 14px 18px rgba(0, 0, 0, 0.38),
     inset 0 -8px 0 rgba(0, 0, 0, 0.16);
 }
 
@@ -996,37 +1011,45 @@ button {
 }
 
 .bomber-cell.cell-explosion {
-  z-index: 8;
+  z-index: 11;
   background:
-    radial-gradient(circle, #fff8c7 0 18%, #ffb01f 34%, #ff3f19 64%, rgba(255, 63, 25, 0.12) 78%),
+    radial-gradient(circle, #fffdf0 0 14%, #ffe15c 28%, #ff7a1f 55%, rgba(255, 63, 25, 0.16) 78%),
     #ffb21d;
-  animation: bomberBlast 0.22s ease-in-out infinite alternate;
+  animation: bomberBlast 0.18s ease-in-out infinite alternate;
+  box-shadow:
+    0 0 22px rgba(255, 119, 29, 0.82),
+    inset 0 0 18px rgba(255, 255, 255, 0.26);
 }
 
 .bomber-cell.cell-explosion::after {
   content: "";
   position: absolute;
-  z-index: 5;
-  inset: 12%;
+  z-index: 6;
+  inset: 9%;
   border-radius: 999px;
-  background: radial-gradient(circle, #fff7b0, #ff6b1a 56%, transparent 72%);
-  filter: blur(1px);
+  background:
+    radial-gradient(circle, #fffde3 0 20%, #ff8a20 56%, transparent 73%);
+  filter: blur(0.8px);
 }
 
 .bomber-cell.explosion-horizontal::after,
 .bomber-cell.explosion-end-left::after,
 .bomber-cell.explosion-end-right::after {
-  inset: 28% -10%;
+  inset: 24% -18%;
   border-radius: 999px;
-  background: linear-gradient(90deg, rgba(255, 68, 24, 0.15), #ff5b19 18%, #fff5a8 50%, #ff5b19 82%, rgba(255, 68, 24, 0.15));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.44), transparent 34%),
+    linear-gradient(90deg, rgba(255, 68, 24, 0.08), #ff5b19 17%, #fff5a8 50%, #ff5b19 83%, rgba(255, 68, 24, 0.08));
 }
 
 .bomber-cell.explosion-vertical::after,
 .bomber-cell.explosion-end-up::after,
 .bomber-cell.explosion-end-down::after {
-  inset: -10% 28%;
+  inset: -18% 24%;
   border-radius: 999px;
-  background: linear-gradient(180deg, rgba(255, 68, 24, 0.15), #ff5b19 18%, #fff5a8 50%, #ff5b19 82%, rgba(255, 68, 24, 0.15));
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.38), transparent 34%),
+    linear-gradient(180deg, rgba(255, 68, 24, 0.08), #ff5b19 17%, #fff5a8 50%, #ff5b19 83%, rgba(255, 68, 24, 0.08));
 }
 
 .bomber-cell.explosion-center::after {
@@ -1063,38 +1086,40 @@ button {
 
 .bomber-bomb {
   position: relative;
-  z-index: 3;
-  width: 64%;
-  height: 64%;
+  z-index: 6;
+  width: 74%;
+  height: 74%;
   border-radius: 999px;
   background:
-    radial-gradient(circle at 34% 27%, rgba(255, 255, 255, 0.42), transparent 18%),
-    radial-gradient(circle, #3a3d4b 0 53%, #080912 55%);
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.6), transparent 17%),
+    radial-gradient(circle at 62% 70%, rgba(255, 79, 184, 0.22), transparent 28%),
+    radial-gradient(circle, #414656 0 51%, #090a13 54%);
   box-shadow:
-    0 8px 10px rgba(0, 0, 0, 0.42),
-    0 0 18px rgba(255, 199, 0, 0.42);
+    0 10px 0 rgba(0, 0, 0, 0.32),
+    0 14px 15px rgba(0, 0, 0, 0.42),
+    0 0 22px rgba(255, 199, 0, 0.48);
   animation: bomberPulse 0.32s ease-in-out infinite alternate;
 }
 
 .bomber-bomb::before {
   content: "";
   position: absolute;
-  right: 5%;
-  top: -13%;
-  width: 32%;
-  height: 22%;
+  right: 3%;
+  top: -15%;
+  width: 35%;
+  height: 24%;
   border-radius: 999px;
-  border-top: 3px solid #b68953;
+  border-top: 4px solid #b68953;
   transform: rotate(24deg);
 }
 
 .bomber-bomb::after {
   content: "";
   position: absolute;
-  right: -2%;
-  top: -8%;
-  width: 16%;
-  height: 16%;
+  right: -4%;
+  top: -9%;
+  width: 18%;
+  height: 18%;
   border-radius: 999px;
   background: #ffd24d;
   box-shadow: 0 0 9px #ffd24d, 0 0 18px #ff3d7f;
@@ -1102,20 +1127,21 @@ button {
 
 .bomber-powerup {
   position: relative;
-  z-index: 4;
-  width: 58%;
-  height: 58%;
+  z-index: 5;
+  width: 64%;
+  height: 64%;
   display: grid;
   place-items: center;
   border: 3px solid #17f6ff;
-  border-radius: 8px;
+  border-radius: 10px;
   color: #061019;
   background:
     radial-gradient(circle at 35% 22%, rgba(255,255,255,0.78), transparent 20%),
     linear-gradient(135deg, #ffe95c, #27f7ff);
   box-shadow:
-    0 0 16px rgba(23, 246, 255, 0.75),
-    0 7px 10px rgba(0, 0, 0, 0.35);
+    0 0 18px rgba(23, 246, 255, 0.78),
+    0 8px 0 rgba(0, 0, 0, 0.26),
+    0 12px 12px rgba(0, 0, 0, 0.35);
   font: 900 clamp(12px, 2.2vw, 19px) "Orbitron", monospace;
   animation: powerupFloat 0.88s ease-in-out infinite alternate;
 }
@@ -1136,112 +1162,202 @@ button {
   position: relative;
   left: auto;
   top: auto;
-  z-index: 5;
-  width: 138%;
-  height: 170%;
+  z-index: 8;
+  width: 118%;
+  height: 150%;
   display: grid;
   place-items: center;
   align-self: end;
   justify-self: center;
-  margin-bottom: -10%;
+  margin-bottom: -5%;
   overflow: visible;
   pointer-events: none;
-  transform-origin: 50% 82%;
-  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 12px color-mix(in srgb, var(--slot-color, #00d9ff) 54%, transparent));
-  will-change: transform, filter;
+  transform-origin: 50% 84%;
+  filter: drop-shadow(0 11px 10px rgba(0, 0, 0, 0.52));
+  will-change: transform;
+  --face-flip: 1;
+  --face-rotate: 0deg;
+  --face-scale: 1.02;
+  --face-y: 0%;
+  --face-brightness: 1;
+  --face-saturate: 1;
 }
 
-.bomber-player::before {
+.bomber-character-shadow {
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 13%;
-  z-index: -1;
+  bottom: 6%;
+  z-index: 1;
   width: 72%;
-  height: 64%;
-  transform: translateX(-50%);
-  border: 2px solid color-mix(in srgb, var(--slot-color, #00d9ff) 78%, white 8%);
-  border-radius: 999px 999px 34% 34%;
-  opacity: 0.82;
-  box-shadow:
-    0 0 14px color-mix(in srgb, var(--slot-color, #00d9ff) 58%, transparent),
-    inset 0 0 12px rgba(255, 255, 255, 0.08);
-}
-
-.bomber-player::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  bottom: 4%;
-  z-index: -1;
-  width: 68%;
-  height: 15%;
+  height: 16%;
   transform: translateX(-50%);
   border-radius: 999px;
-  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0.32) 54%, transparent 76%);
-  box-shadow: 0 0 12px color-mix(in srgb, var(--slot-color, #00d9ff) 38%, transparent);
-  filter: blur(1px);
+  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.76), rgba(0, 0, 0, 0.34) 55%, transparent 76%);
+  box-shadow:
+    0 0 12px color-mix(in srgb, var(--slot-color, #00d9ff) 42%, transparent),
+    0 0 20px rgba(0, 0, 0, 0.26);
+  filter: blur(0.7px);
   opacity: 0.95;
+}
+
+.bomber-character-ring {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 8%;
+  z-index: 2;
+  width: 78%;
+  height: 22%;
+  transform: translateX(-50%);
+  border: 2px solid color-mix(in srgb, var(--slot-color, #00d9ff) 82%, white 10%);
+  border-radius: 999px;
+  background:
+    radial-gradient(ellipse, color-mix(in srgb, var(--slot-color, #00d9ff) 20%, transparent), transparent 62%);
+  box-shadow:
+    0 0 16px color-mix(in srgb, var(--slot-color, #00d9ff) 70%, transparent),
+    inset 0 0 12px rgba(255, 255, 255, 0.12);
+}
+
+.bomber-character-body {
+  position: relative;
+  z-index: 4;
+  width: 78%;
+  height: 84%;
+  display: grid;
+  place-items: end center;
+  transform-origin: 50% 88%;
+  transform: translateY(var(--face-y)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(var(--face-scale));
+  filter: brightness(var(--face-brightness)) saturate(var(--face-saturate));
+  overflow: visible;
+  will-change: transform, filter;
 }
 
 .bomber-player.is-me,
 .bomber-cell.is-me .bomber-player {
-  filter: drop-shadow(0 10px 10px rgba(0, 0, 0, 0.58)) drop-shadow(0 0 18px rgba(255, 199, 0, 0.86));
+  filter:
+    drop-shadow(0 11px 10px rgba(0, 0, 0, 0.52))
+    drop-shadow(0 0 18px rgba(255, 199, 0, 0.86));
 }
 
 .bomber-character-art {
   position: relative;
-  z-index: 2;
-  width: 112%;
-  height: 112%;
+  z-index: 5;
+  width: 100%;
+  height: 100%;
   display: block;
   object-fit: contain;
+  object-position: center bottom;
   user-select: none;
   -webkit-user-drag: none;
-  will-change: transform, filter;
+  filter:
+    drop-shadow(0 0 1px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 5px color-mix(in srgb, var(--slot-color, #00d9ff) 64%, transparent))
+    drop-shadow(0 7px 5px rgba(0, 0, 0, 0.34));
+  will-change: transform;
+}
+
+.bomber-player.facing-left .bomber-character-body {
+  --face-flip: -1;
+  --face-rotate: -2deg;
+  --face-scale: 0.98;
+}
+
+.bomber-player.facing-right .bomber-character-body {
+  --face-rotate: 2deg;
+  --face-scale: 0.98;
+}
+
+.bomber-player.facing-up .bomber-character-body {
+  --face-scale: 0.91;
+  --face-y: 4%;
+  --face-brightness: 0.82;
+  --face-saturate: 0.92;
+}
+
+.bomber-player.facing-down .bomber-character-body {
+  --face-scale: 1.02;
+}
+
+.bomber-character-spark {
+  position: absolute;
+  z-index: 3;
+  width: 7%;
+  height: 7%;
+  border-radius: 999px;
+  background: var(--slot-color, #00d9ff);
+  box-shadow: 0 0 10px var(--slot-color, #00d9ff);
+  opacity: 0;
+}
+
+.bomber-character-spark.s1 {
+  left: 13%;
+  bottom: 27%;
+}
+
+.bomber-character-spark.s2 {
+  right: 15%;
+  bottom: 47%;
 }
 
 .bomber-player.step-moving {
   animation: bomberStep var(--step-ms, 150ms) cubic-bezier(0.22, 0.8, 0.2, 1) both;
 }
 
-.bomber-player.state-idle .bomber-character-art {
+.bomber-player.state-idle .bomber-character-body {
   animation: bomberIdle 1.15s ease-in-out infinite alternate;
 }
 
-.bomber-player.step-moving .bomber-character-art {
+.bomber-player.step-moving .bomber-character-body {
   animation: bomberWalk var(--step-ms, 150ms) ease-in-out both;
 }
 
-.bomber-player.state-hit .bomber-character-art {
+.bomber-player.step-moving .bomber-character-shadow {
+  animation: bomberShadowStep var(--step-ms, 150ms) ease-in-out both;
+}
+
+.bomber-player.state-hit .bomber-character-body {
   animation: bomberHit 0.42s ease both;
 }
 
+.bomber-player.state-hit .bomber-character-spark {
+  animation: characterSpark 0.36s ease-out both;
+}
+
+.bomber-player.state-hit .bomber-character-spark.s2 {
+  animation-delay: 0.05s;
+}
+
 .bomber-player.state-defeat {
-  opacity: 0.42;
-  filter: grayscale(0.8) drop-shadow(0 7px 8px rgba(0, 0, 0, 0.56));
+  opacity: 0.55;
+  filter: grayscale(0.85) drop-shadow(0 7px 8px rgba(0, 0, 0, 0.56));
 }
 
-.bomber-player.state-defeat .bomber-character-art {
-  transform: rotate(78deg) scale(0.82);
+.bomber-player.state-defeat .bomber-character-body {
+  transform: rotate(76deg) scale(0.76) translate(10%, 9%);
+  animation: bomberDeath 0.52s ease both;
 }
 
-.bomber-player.state-victory .bomber-character-art {
+.bomber-player.state-victory .bomber-character-body {
   animation: bomberVictory 0.72s ease-in-out infinite alternate;
 }
 
-.bomber-player.has-shield::before {
+.bomber-player.state-victory .bomber-character-ring {
+  animation: victoryRing 0.72s ease-in-out infinite alternate;
+}
+
+.bomber-player.has-shield .bomber-character-ring {
   border-color: #63e8ff;
   box-shadow:
     0 0 20px rgba(99, 232, 255, 0.86),
     inset 0 0 16px rgba(99, 232, 255, 0.18);
 }
 
-.bomber-player.has-shield::after {
+.bomber-player.has-shield .bomber-character-shadow {
   box-shadow: 0 0 18px rgba(99, 232, 255, 0.7);
 }
 
-.bomber-player.has-skull .bomber-character-art {
+.bomber-player.has-skull .bomber-character-body {
   filter: saturate(0.65) hue-rotate(55deg) brightness(0.82);
 }
 
@@ -1402,25 +1518,45 @@ button {
 }
 
 @keyframes bomberIdle {
-  from { transform: translateY(0) scale(1); }
-  to { transform: translateY(-2px) scale(1.015); }
+  from { transform: translateY(var(--face-y)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(var(--face-scale)); }
+  to { transform: translateY(calc(var(--face-y) - 3px)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(calc(var(--face-scale) + 0.018)); }
 }
 
 @keyframes bomberWalk {
-  0% { transform: translateY(0) rotate(-2deg) scale(1); }
-  48% { transform: translateY(-5px) rotate(2deg) scale(1.04); }
-  100% { transform: translateY(0) rotate(0) scale(1); }
+  0% { transform: translateY(var(--face-y)) rotate(calc(var(--face-rotate) - 2deg)) scaleX(var(--face-flip)) scale(var(--face-scale)); }
+  46% { transform: translateY(calc(var(--face-y) - 7px)) rotate(calc(var(--face-rotate) + 2deg)) scaleX(var(--face-flip)) scale(calc(var(--face-scale) + 0.05)); }
+  100% { transform: translateY(var(--face-y)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(var(--face-scale)); }
 }
 
 @keyframes bomberHit {
-  0%, 100% { transform: translateX(0) scale(1); filter: brightness(1); }
-  25% { transform: translateX(-4px) scale(1.05); filter: brightness(1.8); }
-  52% { transform: translateX(4px) scale(0.96); filter: brightness(1.35); }
+  0%, 100% { transform: translate(0, var(--face-y)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(var(--face-scale)); filter: brightness(var(--face-brightness)) saturate(var(--face-saturate)); }
+  25% { transform: translate(-5px, var(--face-y)) rotate(calc(var(--face-rotate) - 4deg)) scaleX(var(--face-flip)) scale(calc(var(--face-scale) + 0.07)); filter: brightness(1.85) saturate(1.25); }
+  52% { transform: translate(5px, var(--face-y)) rotate(calc(var(--face-rotate) + 4deg)) scaleX(var(--face-flip)) scale(calc(var(--face-scale) - 0.03)); filter: brightness(1.38) saturate(1.1); }
 }
 
 @keyframes bomberVictory {
-  from { transform: translateY(0) scale(1.02); }
-  to { transform: translateY(-7px) scale(1.08); filter: brightness(1.22); }
+  from { transform: translateY(var(--face-y)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(calc(var(--face-scale) + 0.02)); }
+  to { transform: translateY(calc(var(--face-y) - 9px)) rotate(var(--face-rotate)) scaleX(var(--face-flip)) scale(calc(var(--face-scale) + 0.1)); filter: brightness(1.22) saturate(1.14); }
+}
+
+@keyframes bomberDeath {
+  from { opacity: 1; }
+  to { opacity: 0.66; }
+}
+
+@keyframes bomberShadowStep {
+  0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.92; }
+  46% { transform: translateX(-50%) scale(0.78); opacity: 0.62; }
+}
+
+@keyframes characterSpark {
+  from { transform: translate(0, 0) scale(0.4); opacity: 1; }
+  to { transform: translate(10px, -12px) scale(1.25); opacity: 0; }
+}
+
+@keyframes victoryRing {
+  from { transform: translateX(-50%) scale(1); opacity: 0.78; }
+  to { transform: translateX(-50%) scale(1.14); opacity: 1; }
 }
 
 @keyframes bomberStep {
@@ -1598,13 +1734,29 @@ button {
   }
 
   .bomber-player {
-    width: 126%;
-    height: 158%;
-    margin-bottom: -8%;
+    width: 112%;
+    height: 144%;
+    margin-bottom: -3%;
   }
 
-  .bomber-player::before {
+  .bomber-character-body {
+    width: 82%;
+    height: 86%;
+  }
+
+  .bomber-character-ring {
     border-width: 1.5px;
+  }
+
+  .bomber-bomb {
+    width: 76%;
+    height: 76%;
+  }
+
+  .bomber-powerup {
+    width: 68%;
+    height: 68%;
+    border-width: 2px;
   }
 
   .bomber-scoreboard {

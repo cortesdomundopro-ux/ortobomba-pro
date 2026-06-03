@@ -70,12 +70,14 @@ type BombPoint = {
 };
 
 type BomberCell = "empty" | "wall" | "block";
+type BomberDirection = "up" | "down" | "left" | "right";
 
 type BomberPlayerState = {
   x: number;
   y: number;
   lives: number;
   alive: boolean;
+  dir?: BomberDirection;
   bombLimit?: number;
   bombRange?: number;
   speedLevel?: number;
@@ -207,7 +209,7 @@ function avatarHtml(skinIndex: number): string {
 }
 
 function playerAssetForSkin(skinIndex: number): string {
-  return `/arena/players/player-${skinIndexOf(skinIndex) + 1}.png`;
+  return `/arena/players/player-${skinIndexOf(skinIndex) + 1}-trim.png`;
 }
 
 function playerArtHtml(skinIndex: number, className = "player-art-avatar"): string {
@@ -750,7 +752,7 @@ function createBomberState(players: Player[]): BomberState {
   const bomberPlayers: Record<string, BomberPlayerState> = {};
   players.slice(0, MAX_PLAYERS).forEach((player, index) => {
     const start = BOMBER_STARTS[index] ?? BOMBER_STARTS[0];
-    bomberPlayers[player.id] = { x: start.x, y: start.y, lives: 3, alive: true, bombLimit: 1, bombRange: 2, speedLevel: 0 };
+    bomberPlayers[player.id] = { x: start.x, y: start.y, lives: 3, alive: true, dir: "down", bombLimit: 1, bombRange: 2, speedLevel: 0 };
   });
   return {
     width: BOMBER_WIDTH,
@@ -1035,7 +1037,8 @@ function moveBomberPlayer(dx: number, dy: number) {
     moved = true;
     const powerup = state.powerups.find((item) => item.x === nx && item.y === ny);
     const player = room.players[ME.id];
-    const nextBp = { ...bp, x: nx, y: ny };
+    const dir: BomberDirection = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down";
+    const nextBp = { ...bp, x: nx, y: ny, dir };
     if (powerup) playPickupSound(powerup.kind);
     const players = powerup && player
       ? { ...room.players, [ME.id]: applyPowerupToPlayer(player, nextBp, powerup) }
@@ -1406,6 +1409,14 @@ function activePowerupBadges(bp?: BomberPlayerState): string {
   return badges.map((badge) => `<span>${badge}</span>`).join("");
 }
 
+function bomberDirectionClass(bp?: BomberPlayerState | null): string {
+  const dir = bp?.dir ?? "down";
+  if (dir === "up") return "facing-up";
+  if (dir === "left") return "facing-left";
+  if (dir === "right") return "facing-right";
+  return "facing-down";
+}
+
 function explosionClassFor(cells: Set<string>, x: number, y: number): string {
   if (!cells.has(`${x},${y}`)) return "";
   const left = cells.has(`${x - 1},${y}`);
@@ -1484,7 +1495,8 @@ function renderGame() {
       : "";
     const statusClass = [
       bp && Number(bp.shieldUntil || 0) > now() ? "has-shield" : "",
-      bp && Number(bp.skullUntil || 0) > now() ? "has-skull" : ""
+      bp && Number(bp.skullUntil || 0) > now() ? "has-skull" : "",
+      bomberDirectionClass(bp)
     ].filter(Boolean).join(" ");
     const className = [
       "bomber-cell",
@@ -1501,7 +1513,13 @@ function renderGame() {
         ${powerup && cell === "empty" ? `<span class="bomber-powerup powerup-${powerup.kind}" aria-label="Power-up ${powerup.kind}">${powerupLabel(powerup.kind)}</span>` : ""}
         ${player ? `
           <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${playerStateClass} ${statusClass} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${bomberStepMsFor(bp)}ms">
-            ${playerArtHtml(player.skinIndex, "bomber-character-art")}
+            <span class="bomber-character-shadow"></span>
+            <span class="bomber-character-ring"></span>
+            <span class="bomber-character-body">
+              ${playerArtHtml(player.skinIndex, "bomber-character-art")}
+            </span>
+            <span class="bomber-character-spark s1"></span>
+            <span class="bomber-character-spark s2"></span>
           </span>
         ` : ""}
       </div>
