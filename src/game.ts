@@ -154,6 +154,7 @@ let bomberEventsBound = false;
 let bomberTickInterval: ReturnType<typeof setInterval> | null = null;
 let bomberMovePending = false;
 let bomberStepLockedUntil = 0;
+let renderGameRaf = 0;
 const previousBomberPositions = new Map<string, ArenaSlotPoint>();
 let lastRoomSignature = "";
 let runtimePlayerId = uid();
@@ -616,7 +617,7 @@ function listenRoom(code: string) {
     GS = nextRoom;
     ME.host = GS.hostId === ME.id;
     if (GS.status === "lobby") { renderLobby(); showScreen("lobby"); }
-    else if (GS.status === "playing") { renderGame(); showScreen("game"); }
+    else if (GS.status === "playing") { scheduleRenderGame(); showScreen("game"); }
     else { renderGame(); renderWin(); }
   });
   salaRef.child(`players/${ME.id}`).onDisconnect().update({ online: false });
@@ -1098,6 +1099,11 @@ function startBomberTick() {
     const clock = document.getElementById("bomber-clock-val");
     if (clock) clock.textContent = formatGameTime(GS.bomber.startedAt);
     if (ME.host || localMode) {
+      const stamp = now();
+      const needsHostTick =
+        GS.bomber.bombs.some((bomb) => bomb.explodeAt <= stamp) ||
+        GS.bomber.explosions.some((explosion) => explosion.expiresAt <= stamp);
+      if (!needsHostTick) return;
       void updateBomber((room) => tickBomberRoom(room));
     }
   }, 220);
@@ -1134,6 +1140,14 @@ function bindBomberEvents() {
     else if (action === "right") moveBomberPlayer(1, 0);
     else if (action === "bomb") placeBomberBomb();
   }, true);
+}
+
+function scheduleRenderGame() {
+  if (renderGameRaf) return;
+  renderGameRaf = window.requestAnimationFrame(() => {
+    renderGameRaf = 0;
+    renderGame();
+  });
 }
 
 async function startGame() {
@@ -1722,7 +1736,7 @@ function applyAnswerToRoom(room: Room, playerId: string, correct: boolean): Room
 }
 
 function afterRoomMutation() {
-  if (GS.status === "playing") renderGame();
+  if (GS.status === "playing") scheduleRenderGame();
   else renderWin();
 }
 
@@ -1833,6 +1847,10 @@ async function copiarCodigo() {
 function cleanupRoom(updateRemote = true) {
   stopTimer();
   stopBomberTick();
+  if (renderGameRaf) {
+    cancelAnimationFrame(renderGameRaf);
+    renderGameRaf = 0;
+  }
   if (presenceInterval) {
     clearInterval(presenceInterval);
     presenceInterval = null;
