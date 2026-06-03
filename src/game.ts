@@ -76,6 +76,9 @@ type BomberPlayerState = {
   y: number;
   lives: number;
   alive: boolean;
+  bombLimit?: number;
+  bombRange?: number;
+  speedLevel?: number;
   lastHitAt?: number;
 };
 
@@ -96,6 +99,15 @@ type BomberExplosion = {
   expiresAt: number;
 };
 
+type BomberPowerupKind = "speed" | "range" | "bomb";
+
+type BomberPowerup = {
+  id: string;
+  kind: BomberPowerupKind;
+  x: number;
+  y: number;
+};
+
 type BomberState = {
   width: number;
   height: number;
@@ -103,6 +115,7 @@ type BomberState = {
   players: Record<string, BomberPlayerState>;
   bombs: BomberBomb[];
   explosions: BomberExplosion[];
+  powerups: BomberPowerup[];
   startedAt: number;
   updatedAt: number;
 };
@@ -635,6 +648,7 @@ function normalizeBomberState(state?: BomberState | null): BomberState | null {
     players: state.players ?? {},
     bombs: Array.isArray(state.bombs) ? state.bombs : [],
     explosions: Array.isArray(state.explosions) ? state.explosions : [],
+    powerups: Array.isArray(state.powerups) ? state.powerups : [],
     startedAt: state.startedAt ?? now(),
     updatedAt: state.updatedAt ?? now()
   };
@@ -733,7 +747,7 @@ function createBomberState(players: Player[]): BomberState {
   const bomberPlayers: Record<string, BomberPlayerState> = {};
   players.slice(0, MAX_PLAYERS).forEach((player, index) => {
     const start = BOMBER_STARTS[index] ?? BOMBER_STARTS[0];
-    bomberPlayers[player.id] = { x: start.x, y: start.y, lives: 3, alive: true };
+    bomberPlayers[player.id] = { x: start.x, y: start.y, lives: 3, alive: true, bombLimit: 1, bombRange: 2, speedLevel: 0 };
   });
   return {
     width: BOMBER_WIDTH,
@@ -742,6 +756,7 @@ function createBomberState(players: Player[]): BomberState {
     players: bomberPlayers,
     bombs: [],
     explosions: [],
+    powerups: [],
     startedAt: now(),
     updatedAt: now()
   };
@@ -769,6 +784,32 @@ function canMoveTo(state: BomberState, x: number, y: number, playerId: string): 
   return bomberCell(state, x, y) === "empty" &&
     !bomberBombAt(state, x, y) &&
     !bomberPlayerAt(state, x, y, playerId);
+}
+
+function powerupKindFor(x: number, y: number): BomberPowerupKind {
+  const kinds: BomberPowerupKind[] = ["range", "bomb", "speed"];
+  return kinds[Math.abs(x * 11 + y * 7) % kinds.length];
+}
+
+function maybeCreatePowerup(x: number, y: number): BomberPowerup | null {
+  return (x * 19 + y * 23) % 4 === 0 ? { id: uid(), kind: powerupKindFor(x, y), x, y } : null;
+}
+
+function applyPowerupToPlayer(player: Player, bp: BomberPlayerState, powerup: BomberPowerup): Player {
+  if (powerup.kind === "range") {
+    bp.bombRange = Math.min(5, Number(bp.bombRange || 2) + 1);
+    return { ...player, score: player.score + 15 };
+  }
+  if (powerup.kind === "bomb") {
+    bp.bombLimit = Math.min(3, Number(bp.bombLimit || 1) + 1);
+    return { ...player, score: player.score + 10 };
+  }
+  bp.speedLevel = Math.min(2, Number(bp.speedLevel || 0) + 1);
+  return { ...player, score: player.score + 10 };
+}
+
+function bomberStepMsFor(player?: BomberPlayerState): number {
+  return Math.max(95, BOMBER_STEP_MS - Number(player?.speedLevel || 0) * 22);
 }
 
 function explosionCellsFor(state: BomberState, bomb: BomberBomb): ArenaSlotPoint[] {
@@ -845,6 +886,7 @@ function tickBomberRoom(room: Room): Room | null {
     cells: [...state.cells],
     bombs: state.bombs.filter((bomb) => bomb.explodeAt > stamp),
     explosions: state.explosions.filter((explosion) => explosion.expiresAt > stamp),
+    powerups: [...state.powerups],
     players: Object.fromEntries(Object.entries(state.players).map(([id, p]) => [id, { ...p }]))
   };
   let players = { ...room.players };
@@ -852,7 +894,14 @@ function tickBomberRoom(room: Room): Room | null {
     const cells = explosionCellsFor(nextState, bomb);
     cells.forEach((cell) => {
       const idx = bomberIdx(cell.x, cell.y, nextState.width);
-      if (nextState.cells[idx] === "block") nextState.cells[idx] = "empty";
+      if (nextState.cells[idx] === "block") {
+        nextState.cells[idx] = "empty";
+        if (players[bomb.ownerId]) {
+          players[bomb.ownerId] = { ...players[bomb.ownerId], score: players[bomb.ownerId].score + 5 };
+        }
+        const powerup = maybeCreatePowerup(cell.x, cell.y);
+        if (powerup) nextState.powerups.push(powerup);
+      }
     });
     nextState.explosions.push({
       id: uid(),
@@ -904,22 +953,30 @@ function moveBomberPlayer(dx: number, dy: number) {
     const ny = bp.y + dy;
     if (!canMoveTo(state, nx, ny, ME.id)) return null;
     moved = true;
+    const powerup = state.powerups.find((item) => item.x === nx && item.y === ny);
+    const player = room.players[ME.id];
+    const nextBp = { ...bp, x: nx, y: ny };
+    const players = powerup && player
+      ? { ...room.players, [ME.id]: applyPowerupToPlayer(player, nextBp, powerup) }
+      : room.players;
     const nextState: BomberState = {
       ...state,
-      players: { ...state.players, [ME.id]: { ...bp, x: nx, y: ny } },
+      players: { ...state.players, [ME.id]: nextBp },
+      powerups: powerup ? state.powerups.filter((item) => item.id !== powerup.id) : state.powerups,
       updatedAt: now()
     };
-    return { ...room, bomber: nextState, updatedAt: now() };
+    return { ...room, players, bomber: nextState, updatedAt: now() };
   }).finally(() => {
     if (!moved) {
       bomberMovePending = false;
       return;
     }
-    bomberStepLockedUntil = now() + BOMBER_STEP_MS;
+    const stepMs = bomberStepMsFor(GS.bomber?.players[ME.id]);
+    bomberStepLockedUntil = now() + stepMs;
     window.setTimeout(() => {
       bomberMovePending = false;
       bomberStepLockedUntil = 0;
-    }, BOMBER_STEP_MS);
+    }, stepMs);
   });
 }
 
@@ -929,7 +986,7 @@ function placeBomberBomb() {
     const state = room.bomber;
     const bp = state?.players[ME.id];
     if (!state || !bp?.alive) return null;
-    if (state.bombs.some((bomb) => bomb.ownerId === ME.id)) return null;
+    if (state.bombs.filter((bomb) => bomb.ownerId === ME.id).length >= Number(bp.bombLimit || 1)) return null;
     if (bomberBombAt(state, bp.x, bp.y)) return null;
     const stamp = now();
     const bomb: BomberBomb = {
@@ -939,7 +996,7 @@ function placeBomberBomb() {
       y: bp.y,
       placedAt: stamp,
       explodeAt: stamp + BOMBER_BOMB_MS,
-      range: 2
+      range: Number(bp.bombRange || 2)
     };
     return {
       ...room,
@@ -956,6 +1013,8 @@ function startBomberTick() {
       stopBomberTick();
       return;
     }
+    const clock = document.getElementById("bomber-clock-val");
+    if (clock) clock.textContent = formatGameTime(GS.bomber.startedAt);
     if (ME.host || localMode) {
       void updateBomber((room) => tickBomberRoom(room));
     }
@@ -1223,6 +1282,19 @@ function setBombFuseProgress(ratio: number) {
   bomb.style.setProperty("--spark-scale", `${(1 + burned * 0.42).toFixed(2)}`);
 }
 
+function formatGameTime(startedAt: number): string {
+  const elapsed = Math.max(0, Math.floor((now() - startedAt) / 1000));
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function powerupLabel(kind: BomberPowerupKind): string {
+  if (kind === "range") return "+";
+  if (kind === "bomb") return "B";
+  return "S";
+}
+
 function renderGame() {
   const state = GS.bomber;
   const board = el<HTMLDivElement>("players-circle");
@@ -1252,6 +1324,8 @@ function renderGame() {
   });
   const bombsByCell = new Map<string, BomberBomb>();
   state.bombs.forEach((bomb) => bombsByCell.set(`${bomb.x},${bomb.y}`, bomb));
+  const powerupsByCell = new Map<string, BomberPowerup>();
+  state.powerups.forEach((powerup) => powerupsByCell.set(`${powerup.x},${powerup.y}`, powerup));
 
   const cellsHtml = state.cells.map((cell, idx) => {
     const x = idx % state.width;
@@ -1259,6 +1333,7 @@ function renderGame() {
     const key = `${x},${y}`;
     const player = playerByCell.get(key);
     const bomb = bombsByCell.get(key);
+    const powerup = powerupsByCell.get(key);
     const bp = player ? state.players[player.id] : null;
     const slotIndex = player ? players.findIndex((p) => p.id === player.id) : -1;
     const previousPosition = player ? previousBomberPositions.get(player.id) : undefined;
@@ -1268,6 +1343,7 @@ function renderGame() {
     const className = [
       "bomber-cell",
       `cell-${cell}`,
+      (x + y) % 2 === 0 ? "tile-a" : "tile-b",
       explosionCells.has(key) ? "cell-explosion" : "",
       player ? "has-player" : "",
       player?.id === ME.id ? "is-me" : ""
@@ -1276,8 +1352,9 @@ function renderGame() {
       <div class="${className}" data-x="${x}" data-y="${y}">
         ${cell === "block" ? '<span class="bomber-crate"></span>' : ""}
         ${bomb ? '<span class="bomber-bomb" aria-label="Bomba"></span>' : ""}
+        ${powerup && cell === "empty" ? `<span class="bomber-powerup powerup-${powerup.kind}" aria-label="Power-up ${powerup.kind}">${powerupLabel(powerup.kind)}</span>` : ""}
         ${player ? `
-          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${BOMBER_STEP_MS}ms">
+          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${bomberStepMsFor(bp)}ms">
             ${playerArtHtml(player.skinIndex, "bomber-character-art")}
           </span>
         ` : ""}
@@ -1307,8 +1384,11 @@ function renderGame() {
     return `
       <div class="bomber-score ${player.id === ME.id ? "me" : ""} ${bp?.alive ? "" : "out"}" style="--slot-color:${SLOT_COLORS[index % SLOT_COLORS.length]}">
         <span class="bomber-score-art">${playerArtHtml(player.skinIndex, "bomber-score-character")}</span>
-        <strong>${esc(player.nick)}</strong>
-        <em>${renderLives(lives)}</em>
+        <span class="bomber-score-main">
+          <strong>${esc(player.nick)}</strong>
+          <em>${renderLives(lives)}</em>
+        </span>
+        <span class="bomber-score-points">${player.score}</span>
       </div>
     `;
   }).join("");
@@ -1317,7 +1397,11 @@ function renderGame() {
   hud.className = "q-container bomber-hud";
   hud.innerHTML = `
     <div class="bomber-hud-top">
-      <div>
+      <div class="bomber-match-clock">
+        <span class="lbl-small">Tempo</span>
+        <strong id="bomber-clock-val">${formatGameTime(state.startedAt)}</strong>
+      </div>
+      <div class="bomber-alive-count">
         <span class="lbl-small">Jogadores vivos</span>
         <strong>${aliveCount}</strong>
       </div>
