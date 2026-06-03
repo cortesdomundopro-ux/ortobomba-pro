@@ -608,9 +608,23 @@ function normalizeRoom(room: Room): Room {
     ...emptyRoom(room.code),
     ...room,
     players: room.players ?? {},
-    bomber: room.bomber ?? null,
+    bomber: normalizeBomberState(room.bomber),
     usedQ: room.usedQ ?? [],
     eliminationOrder: room.eliminationOrder ?? []
+  };
+}
+
+function normalizeBomberState(state?: BomberState | null): BomberState | null {
+  if (!state) return null;
+  return {
+    width: state.width ?? BOMBER_WIDTH,
+    height: state.height ?? BOMBER_HEIGHT,
+    cells: Array.isArray(state.cells) ? state.cells : makeBomberCells(),
+    players: state.players ?? {},
+    bombs: Array.isArray(state.bombs) ? state.bombs : [],
+    explosions: Array.isArray(state.explosions) ? state.explosions : [],
+    startedAt: state.startedAt ?? now(),
+    updatedAt: state.updatedAt ?? now()
   };
 }
 
