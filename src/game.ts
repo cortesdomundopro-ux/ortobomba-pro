@@ -79,6 +79,8 @@ type BomberPlayerState = {
   bombLimit?: number;
   bombRange?: number;
   speedLevel?: number;
+  shieldUntil?: number;
+  skullUntil?: number;
   lastHitAt?: number;
 };
 
@@ -99,7 +101,7 @@ type BomberExplosion = {
   expiresAt: number;
 };
 
-type BomberPowerupKind = "speed" | "range" | "bomb";
+type BomberPowerupKind = "speed" | "range" | "bomb" | "heart" | "shield" | "skull";
 
 type BomberPowerup = {
   id: string;
@@ -787,7 +789,7 @@ function canMoveTo(state: BomberState, x: number, y: number, playerId: string): 
 }
 
 function powerupKindFor(x: number, y: number): BomberPowerupKind {
-  const kinds: BomberPowerupKind[] = ["range", "bomb", "speed"];
+  const kinds: BomberPowerupKind[] = ["range", "bomb", "speed", "heart", "shield", "skull"];
   return kinds[Math.abs(x * 11 + y * 7) % kinds.length];
 }
 
@@ -804,12 +806,25 @@ function applyPowerupToPlayer(player: Player, bp: BomberPlayerState, powerup: Bo
     bp.bombLimit = Math.min(3, Number(bp.bombLimit || 1) + 1);
     return { ...player, score: player.score + 10 };
   }
+  if (powerup.kind === "heart") {
+    bp.lives = Math.min(4, bp.lives + 1);
+    return { ...player, lives: bp.lives, score: player.score + 20 };
+  }
+  if (powerup.kind === "shield") {
+    bp.shieldUntil = now() + 9000;
+    return { ...player, score: player.score + 12 };
+  }
+  if (powerup.kind === "skull") {
+    bp.skullUntil = now() + 7000;
+    return { ...player, score: Math.max(0, player.score - 8) };
+  }
   bp.speedLevel = Math.min(2, Number(bp.speedLevel || 0) + 1);
   return { ...player, score: player.score + 10 };
 }
 
 function bomberStepMsFor(player?: BomberPlayerState): number {
-  return Math.max(95, BOMBER_STEP_MS - Number(player?.speedLevel || 0) * 22);
+  const skullPenalty = Number(player?.skullUntil || 0) > now() ? 55 : 0;
+  return Math.max(95, BOMBER_STEP_MS - Number(player?.speedLevel || 0) * 22 + skullPenalty);
 }
 
 function explosionCellsFor(state: BomberState, bomb: BomberBomb): ArenaSlotPoint[] {
@@ -841,8 +856,15 @@ function applyBomberDamage(playersIn: Record<string, Player>, state: BomberState
     if (stamp - Number(bp.lastHitAt || 0) < BOMBER_HIT_COOLDOWN_MS) return;
     const hit = cells.some((cell) => cell.x === bp.x && cell.y === bp.y);
     if (!hit) return;
+    if (Number(bp.shieldUntil || 0) > stamp) {
+      bp.shieldUntil = 0;
+      bp.lastHitAt = stamp;
+      playShieldSound();
+      return;
+    }
     bp.lives = Math.max(0, bp.lives - 1);
     bp.lastHitAt = stamp;
+    playDamageSound();
     const player = players[id];
     if (player) {
       players[id] = { ...player, lives: bp.lives };
@@ -850,6 +872,7 @@ function applyBomberDamage(playersIn: Record<string, Player>, state: BomberState
         bp.alive = false;
         bp.lastHitAt = stamp;
         players[id].eliminatedAt = stamp;
+        playDeathSound();
       }
     }
   });
@@ -949,6 +972,53 @@ async function updateBomber(mutator: (room: Room) => Room | null) {
   });
 }
 
+function playBlip(freq = 420, duration = 0.08, gain = 0.12, type: OscillatorType = "sine") {
+  const ac = getAC();
+  if (!ac) return;
+  const o = ac.createOscillator();
+  const g = ac.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, ac.currentTime);
+  g.gain.setValueAtTime(gain, ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + duration);
+  o.connect(g);
+  g.connect(ac.destination);
+  o.start();
+  o.stop(ac.currentTime + duration);
+}
+
+function playStepSound() {
+  playBlip(180, 0.045, 0.045, "triangle");
+}
+
+function playPlantSound() {
+  playBlip(260, 0.08, 0.12, "square");
+  window.setTimeout(() => playBlip(180, 0.08, 0.09, "sine"), 48);
+}
+
+function playPickupSound(kind: BomberPowerupKind) {
+  const base = kind === "skull" ? 160 : kind === "heart" ? 620 : 520;
+  playBlip(base, 0.08, 0.12, kind === "skull" ? "sawtooth" : "triangle");
+  window.setTimeout(() => playBlip(kind === "skull" ? 90 : base + 180, 0.12, 0.10, "sine"), 70);
+}
+
+function playDamageSound() {
+  playBlip(130, 0.16, 0.18, "sawtooth");
+}
+
+function playShieldSound() {
+  playBlip(720, 0.08, 0.11, "triangle");
+  window.setTimeout(() => playBlip(980, 0.12, 0.08, "sine"), 60);
+}
+
+function playDeathSound() {
+  const ac = getAC();
+  if (!ac) return;
+  [260, 190, 120].forEach((freq, i) => {
+    window.setTimeout(() => playBlip(freq, 0.16, 0.14, "sawtooth"), i * 90);
+  });
+}
+
 function moveBomberPlayer(dx: number, dy: number) {
   if (GS.status !== "playing" || !GS.bomber || !ME.id) return;
   if (bomberMovePending || now() < bomberStepLockedUntil) return;
@@ -965,6 +1035,7 @@ function moveBomberPlayer(dx: number, dy: number) {
     const powerup = state.powerups.find((item) => item.x === nx && item.y === ny);
     const player = room.players[ME.id];
     const nextBp = { ...bp, x: nx, y: ny };
+    if (powerup) playPickupSound(powerup.kind);
     const players = powerup && player
       ? { ...room.players, [ME.id]: applyPowerupToPlayer(player, nextBp, powerup) }
       : room.players;
@@ -980,6 +1051,7 @@ function moveBomberPlayer(dx: number, dy: number) {
       bomberMovePending = false;
       return;
     }
+    playStepSound();
     const stepMs = bomberStepMsFor(GS.bomber?.players[ME.id]);
     bomberStepLockedUntil = now() + stepMs;
     window.setTimeout(() => {
@@ -997,6 +1069,7 @@ function placeBomberBomb() {
     if (!state || !bp?.alive) return null;
     if (state.bombs.filter((bomb) => bomb.ownerId === ME.id).length >= Number(bp.bombLimit || 1)) return null;
     if (bomberBombAt(state, bp.x, bp.y)) return null;
+    playPlantSound();
     const stamp = now();
     const bomb: BomberBomb = {
       id: uid(),
@@ -1301,7 +1374,22 @@ function formatGameTime(startedAt: number): string {
 function powerupLabel(kind: BomberPowerupKind): string {
   if (kind === "range") return "+";
   if (kind === "bomb") return "B";
+  if (kind === "heart") return "H";
+  if (kind === "shield") return "O";
+  if (kind === "skull") return "!";
   return "S";
+}
+
+function activePowerupBadges(bp?: BomberPlayerState): string {
+  if (!bp) return "";
+  const badges = [
+    Number(bp.bombLimit || 1) > 1 ? `B${bp.bombLimit}` : "",
+    Number(bp.bombRange || 2) > 2 ? `F${bp.bombRange}` : "",
+    Number(bp.speedLevel || 0) > 0 ? `S${bp.speedLevel}` : "",
+    Number(bp.shieldUntil || 0) > now() ? "ESC" : "",
+    Number(bp.skullUntil || 0) > now() ? "!" : ""
+  ].filter(Boolean);
+  return badges.map((badge) => `<span>${badge}</span>`).join("");
 }
 
 function explosionClassFor(cells: Set<string>, x: number, y: number): string {
@@ -1380,6 +1468,10 @@ function renderGame() {
           ? playerHit ? "state-hit" : "state-idle"
           : "state-defeat"
       : "";
+    const statusClass = [
+      bp && Number(bp.shieldUntil || 0) > now() ? "has-shield" : "",
+      bp && Number(bp.skullUntil || 0) > now() ? "has-skull" : ""
+    ].filter(Boolean).join(" ");
     const className = [
       "bomber-cell",
       `cell-${cell}`,
@@ -1394,7 +1486,7 @@ function renderGame() {
         ${bomb ? '<span class="bomber-bomb" aria-label="Bomba"></span>' : ""}
         ${powerup && cell === "empty" ? `<span class="bomber-powerup powerup-${powerup.kind}" aria-label="Power-up ${powerup.kind}">${powerupLabel(powerup.kind)}</span>` : ""}
         ${player ? `
-          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${playerStateClass} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${bomberStepMsFor(bp)}ms">
+          <span class="bomber-player p-slot ${bp?.alive ? "" : "eliminated"} ${playerStateClass} ${statusClass} ${isStepMove ? "step-moving" : ""}" data-player-id="${esc(player.id)}" style="--slot-color:${SLOT_COLORS[Math.max(0, slotIndex) % SLOT_COLORS.length]};--step-from-x:${stepDx};--step-from-y:${stepDy};--step-ms:${bomberStepMsFor(bp)}ms">
             ${playerArtHtml(player.skinIndex, "bomber-character-art")}
           </span>
         ` : ""}
@@ -1427,6 +1519,7 @@ function renderGame() {
         <span class="bomber-score-main">
           <strong>${esc(player.nick)}</strong>
           <em>${renderLives(lives)}</em>
+          <small>${activePowerupBadges(bp)}</small>
         </span>
         <span class="bomber-score-points">${player.score}</span>
       </div>

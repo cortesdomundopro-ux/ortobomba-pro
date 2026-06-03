@@ -1120,6 +1120,14 @@ button {
 .powerup-range { background: linear-gradient(135deg, #ffef5a, #ff9b1a); }
 .powerup-bomb { background: linear-gradient(135deg, #ff5a9e, #7a35ff); color: #fff; }
 .powerup-speed { background: linear-gradient(135deg, #35f06b, #17f6ff); }
+.powerup-heart { background: linear-gradient(135deg, #ff4f85, #fff0f5); color: #7b001f; }
+.powerup-shield { background: linear-gradient(135deg, #63e8ff, #2569ff); color: #fff; }
+.powerup-skull {
+  border-color: #ff304d;
+  color: #fff;
+  background: linear-gradient(135deg, #2a1020, #ff304d);
+  box-shadow: 0 0 16px rgba(255, 48, 77, 0.78), 0 7px 10px rgba(0, 0, 0, 0.35);
+}
 
 .bomber-player {
   position: relative;
@@ -1217,6 +1225,21 @@ button {
   animation: bomberVictory 0.72s ease-in-out infinite alternate;
 }
 
+.bomber-player.has-shield::before {
+  border-color: #63e8ff;
+  box-shadow:
+    0 0 20px rgba(99, 232, 255, 0.86),
+    inset 0 0 16px rgba(99, 232, 255, 0.18);
+}
+
+.bomber-player.has-shield::after {
+  box-shadow: 0 0 18px rgba(99, 232, 255, 0.7);
+}
+
+.bomber-player.has-skull .bomber-character-art {
+  filter: saturate(0.65) hue-rotate(55deg) brightness(0.82);
+}
+
 .bomber-hud {
   order: -1;
   width: min(96vw, 980px);
@@ -1308,6 +1331,21 @@ button {
   min-width: 0;
   display: grid;
   gap: 2px;
+}
+
+.bomber-score-main small {
+  min-height: 16px;
+  display: flex;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.bomber-score-main small span {
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #061019;
+  background: var(--gold);
+  font: 900 9px "Orbitron", monospace;
 }
 
 .bomber-score-points {
